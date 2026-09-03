@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Launcher: run under the project venv, wherever this script is called from.
+# Resolves symlinks, so `ln -s .../wb /usr/local/bin/wb` works.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  SOURCE="$(readlink "$SOURCE")"
+  case "$SOURCE" in /*) ;; *) SOURCE="$DIR/$SOURCE" ;; esac
+done
+ROOT="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+
+PY="$ROOT/.venv/bin/python"
+if [ ! -x "$PY" ]; then
+  PY="$(command -v python3)"
+  if ! "$PY" -c 'import click' 2>/dev/null; then
+    echo "wb: the venv at $ROOT/.venv is missing or broken." >&2
+    echo "    run:  cd $ROOT && ./install.sh" >&2
+    exit 1
+  fi
+fi
+exec "$PY" -c 'import sys; sys.path.insert(0, sys.argv[1]); from weekboard.cli import main; sys.argv=sys.argv[1:]; sys.argv[0]="wb"; main()' "$ROOT" "$@"

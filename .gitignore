@@ -1,0 +1,28 @@
+# secrets — never commit these
+.env
+.env.*
+!.env.example
+
+# environment / build
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# generated output and caches
+out/
+
+# undo snapshots — churn, no value in history
+data/history/
+# detected display size, per-machine
+data/.display.json
+# cached GitHub commit activity, per-machine
+data/.github.json
+
+# scratch
+_to_delete/
+
+# stray local files that land in project root — never project content
+*.tar.gz
+Screenshot*.png

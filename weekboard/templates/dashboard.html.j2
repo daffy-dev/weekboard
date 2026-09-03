@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ week.key }}</title>
+<style>
+@font-face { font-family:'PressStart'; src:url('{{ fonts }}/press-start-2p-latin-400-normal.woff2') format('woff2'); font-display:block; }
+@font-face { font-family:'JB'; src:url('{{ fonts }}/jetbrains-mono-latin-400-normal.woff2') format('woff2'); font-weight:400; font-display:block; }
+@font-face { font-family:'JB'; src:url('{{ fonts }}/jetbrains-mono-latin-ext-400-normal.woff2') format('woff2'); font-weight:400; unicode-range:U+0100-024F,U+0259,U+1E00-1EFF,U+2020,U+20A0-20AB,U+20AD-20CF,U+2113,U+2C60-2C7F,U+A720-A7FF; font-display:block; }
+@font-face { font-family:'JB'; src:url('{{ fonts }}/jetbrains-mono-latin-700-normal.woff2') format('woff2'); font-weight:700; font-display:block; }
+@font-face { font-family:'JB'; src:url('{{ fonts }}/jetbrains-mono-latin-ext-700-normal.woff2') format('woff2'); font-weight:700; unicode-range:U+0100-024F,U+0259,U+1E00-1EFF,U+2020,U+20A0-20AB,U+20AD-20CF,U+2113,U+2C60-2C7F,U+A720-A7FF; font-display:block; }
+@font-face { font-family:'Braille'; src:url('{{ fonts }}/noto-sans-symbols-2-braille-400-normal.woff2') format('woff2'); font-display:block; }
+@font-face { font-family:'Share'; src:url('{{ fonts }}/share-tech-mono-latin-400-normal.woff2') format('woff2'); font-display:block; }
+
+:root{
+  --u: {{ unit }}px;              /* layout unit, scales with render width */
+  --accent: {{ accent }};
+  --accent-dim: {{ accent }}55;
+  --bg: #040806;
+  --panel: rgba(8,20,15,.62);
+  --panel-solid: #071310;
+  --line: rgba(61,220,74,.22);
+  --line-soft: rgba(61,220,74,.12);
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ width:{{ width }}px; height:{{ height }}px; overflow:hidden; }
+body{
+  background:
+    radial-gradient(120% 90% at 78% 6%, rgba(28,20,60,.55), transparent 60%),
+    radial-gradient(80% 70% at 4% 96%, rgba(6,40,28,.5), transparent 65%),
+    var(--bg);
+  color:#cfe8d8;
+  font-family:'JB','SFMono-Regular',Menlo,monospace;
+  font-size: calc(var(--u) * 1.0);
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+body::after{  /* scanlines — plain alpha; mix-blend-mode costs ~1s a render */
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:99;
+  background:repeating-linear-gradient(to bottom, rgba(0,0,0,.10) 0 1px, transparent 1px calc(var(--u)*.28));
+}
+.board{
+  width:100%; height:100%; display:flex; flex-direction:column; gap:calc(var(--u)*.85);
+  /* base padding plus any safe-area inset, so a menu bar or Dock covers nothing */
+  padding:calc(var(--u)*1.1 + {{ inset_top }}px) calc(var(--u)*1.1 + {{ inset_right }}px)
+          calc(var(--u)*1.1 + {{ inset_bottom }}px) calc(var(--u)*1.1 + {{ inset_left }}px);
+}
+
+/* ---------- panel chrome ---------- */
+.panel{
+  border:1px solid var(--line);
+  background:var(--panel);
+  padding:calc(var(--u)*.9) calc(var(--u)*1.05);
+  position:relative;
+}
+.panel > .cap{
+  color:var(--accent); font-size:calc(var(--u)*.82); letter-spacing:.14em;
+  text-transform:uppercase; margin-bottom:calc(var(--u)*.7); display:flex;
+  justify-content:space-between; align-items:baseline;
+}
+.cap .sub{ color:#4d6b5c; letter-spacing:.1em; }
+.dim{ color:#5d7d6d; }
+
+/* ---------- top region ---------- */
+.main{ flex:1 1 auto; display:flex; gap:calc(var(--u)*.85); min-height:0; }
+.col{ display:flex; flex-direction:column; gap:calc(var(--u)*.85); min-height:0; }
+.left{ flex:0 0 51.5%; }
+.center{ flex:1 1 auto; min-width:0; }
+.right{ flex:0 0 15.5%; }
+
+.upper{ display:flex; gap:calc(var(--u)*.85); }
+.upper .a{ flex:0 0 63%; display:flex; flex-direction:column; gap:calc(var(--u)*.85); }
+.upper .b{ flex:1 1 auto; display:flex; flex-direction:column; gap:calc(var(--u)*.85); min-width:0; }
+
+.weekhead{ display:flex; align-items:flex-end; gap:calc(var(--u)*1); padding:calc(var(--u)*.2) 0 calc(var(--u)*.4); }
+.weekhead h1{
+  font-family:'PressStart',monospace; font-size:calc(var(--u)*3.55); line-height:1;
+  color:#eef7f0; letter-spacing:.02em;
+  text-shadow:0 0 calc(var(--u)*1.2) rgba(61,220,74,.28);
+}
+.weekhead .range{ color:var(--accent); font-size:calc(var(--u)*.86); letter-spacing:.1em; padding-bottom:calc(var(--u)*.35); }
+
+.duo{ display:flex; gap:calc(var(--u)*.85); }
+.duo .mission{ flex:1 1 auto; }
+.duo .focus{ flex:0 0 36%; }
+.mission p{ font-size:calc(var(--u)*1.02); line-height:1.55; color:#d8ecdd; }
+.mission .tagline{ color:var(--accent); margin-top:calc(var(--u)*.7); }
+.focus .prompt{ color:var(--accent); font-size:calc(var(--u)*1.3); margin-bottom:calc(var(--u)*.45); letter-spacing:.05em; }
+.focus .prompt .cursor{ display:inline-block; width:calc(var(--u)*.95); height:calc(var(--u)*.18);
+  background:var(--accent); vertical-align:middle; margin-left:.2em; }
+.focus ul{ list-style:none; color:var(--accent); font-size:calc(var(--u)*.9); letter-spacing:.12em; }
+
+/* headline + chart */
+.kaizen .ja{ font-size:calc(var(--u)*1.35); color:#eaf6ee; letter-spacing:.04em;
+  font-family:'JB','Hiragino Sans','Noto Sans CJK JP',sans-serif; }
+.kaizen .en{ color:var(--accent); font-size:calc(var(--u)*.88); letter-spacing:.1em; margin-top:calc(var(--u)*.25); }
+.kaizen .en u{ text-underline-offset:.2em; }
+.chart{ flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+.chart .head{ color:#cfe8d8; font-size:calc(var(--u)*.82); letter-spacing:.1em; margin-bottom:calc(var(--u)*.55); }
+.chart .head .up{ color:var(--accent); }
+.bars{ flex:1 1 auto; display:flex; align-items:flex-end; gap:calc(var(--u)*.5);
+  border-bottom:1px solid var(--line-soft); padding-bottom:calc(var(--u)*.2);
+  background:repeating-linear-gradient(to right, var(--line-soft) 0 1px, transparent 1px calc(var(--u)*.75)),
+             repeating-linear-gradient(to bottom, var(--line-soft) 0 1px, transparent 1px calc(var(--u)*.75));
+  min-height:calc(var(--u)*4.5);
+}
+.bars .bar{ flex:1 1 0; background:#20372c; position:relative; min-height:2px; }
+.bars .bar.hot{ background:var(--accent); box-shadow:0 0 calc(var(--u)*.8) rgba(61,220,74,.45); }
+.bars .bar.today{ outline:1px solid var(--accent); }
+.axis{ display:flex; gap:calc(var(--u)*.5); margin-top:calc(var(--u)*.3); }
+.axis span{ flex:1 1 0; text-align:center; color:#5d7d6d; font-size:calc(var(--u)*.78); }
+.axis span.now{ color:var(--accent); }
+
+/* ---------- tasks ---------- */
+.tasks{ flex:1 1 auto; display:flex; flex-direction:column; min-height:0; }
+.tasklist{ flex:1 1 auto; min-height:0; }
+{% if task_cols == 1 %}
+.tasklist{ display:flex; flex-direction:column; }
+.task{ flex:1 1 0; max-height:calc(var(--u)*{{ task_row }}); align-items:center; }
+{% else %}
+.tasklist{ columns:{{ task_cols }}; column-gap:calc(var(--u)*1.6); }
+.task{ break-inside:avoid; align-items:flex-start; }
+{% endif %}
+.task{ display:flex; gap:calc(var(--u)*.7); font-size:calc(var(--u)*{{ task_size }});
+  padding:calc(var(--u)*{{ task_pad }}) 0; border-bottom:1px solid rgba(61,220,74,.07); }
+.task .n{ color:#4d6b5c; flex:0 0 auto; width:calc(var(--u)*1.7); }
+.task .t{ flex:1 1 auto; color:#dcefe2; }
+.task .box{ flex:0 0 auto; width:calc(var(--u)*1.25); height:calc(var(--u)*1.25);
+  border:1px solid var(--accent-dim); position:relative; margin-top:calc(var(--u)*.1); }
+.task.done .box{ border-color:var(--accent); }
+.task.done .box::after{ content:''; position:absolute; left:22%; top:6%; width:36%; height:66%;
+  border:solid var(--accent); border-width:0 calc(var(--u)*.16) calc(var(--u)*.16) 0; transform:rotate(42deg); }
+.task.done .t{ color:#4f7060; }
+.task.hi:not(.done) .t{ color:#ffffff; }
+.task.hi:not(.done) .n{ color:var(--accent); }
+.task .carry{ color:#4d6b5c; margin-right:.4em; }
+.task .tag{ color:#3f6a8c; font-size:.85em; margin-left:.5em; }
+.tasks .empty{ color:#4d6b5c; padding:calc(var(--u)*1.2) 0; }
+.tasks .foot{ margin-top:calc(var(--u)*.6); display:flex; justify-content:space-between;
+  align-items:center; color:#4d6b5c; font-size:calc(var(--u)*.82); letter-spacing:.08em; }
+.meter{ flex:1 1 auto; height:calc(var(--u)*.42); margin:0 calc(var(--u)*1); background:#132018; }
+.meter i{ display:block; height:100%; background:var(--accent); }
+
+/* ---------- center column ---------- */
+.art{ flex:1 1 auto; min-height:38%; border:1px solid var(--line); overflow:hidden; position:relative; min-height:0; }
+.art img{ width:100%; height:100%; object-fit:cover; display:block; }
+.art::after{ content:''; position:absolute; inset:0;
+  background:linear-gradient(to bottom, rgba(4,8,6,.25), rgba(4,8,6,.15) 55%, rgba(4,8,6,.75)); }
+
+.win{ flex:0 0 auto; display:flex; flex-direction:column; min-height:0; }
+.win .bar{ display:flex; justify-content:space-between; align-items:center;
+  border-bottom:1px solid var(--line-soft); padding-bottom:calc(var(--u)*.5); margin-bottom:calc(var(--u)*.6); }
+.win .bar .name{ color:var(--accent); font-size:calc(var(--u)*.82); letter-spacing:.14em; }
+.win .bar .dots span{ display:inline-block; width:calc(var(--u)*.7); height:calc(var(--u)*.7);
+  border:1px solid #2c4a3a; margin-left:calc(var(--u)*.35); }
+.win .body{ flex:1 1 auto; display:flex; gap:calc(var(--u)*1); min-height:0; }
+.code{ flex:1 1 0; min-width:0; font-size:calc(var(--u)*.92); line-height:1.55; min-width:0; }
+.code .k{ color:#c084fc; } .code .f{ color:#5ad1ff; } .code .c{ color:#3f7f55; }
+.code .p{ color:#dcefe2; }
+.ascii{ flex:0 0 {{ ascii_share }}%; overflow:hidden; color:#e0913f; font-size:calc(var(--u)*{{ ascii_size }});
+  font-family:{% if ascii_braille %}'Braille','Apple Symbols',{% endif %}'JB',monospace; line-height:{{ ascii_leading }};
+  white-space:pre; align-self:center; text-align:left;
+  width:fit-content; margin-left:auto; margin-right:auto;
+  text-shadow:0 0 calc(var(--u)*.6) rgba(224,145,63,.35); }
+.ascii .cap2{ font-size:calc(var(--u)*.95); color:#e0913f; display:block; text-align:center;
+  margin-top:calc(var(--u)*.55); font-family:'JB','Hiragino Sans','Noto Sans CJK JP',sans-serif; }
+.ascii .cap3{ font-size:calc(var(--u)*.72); color:#8a6134; display:block; text-align:center;
+  letter-spacing:.12em; }
+
+.termlog{ flex:0 0 auto; }
+.termlog .line{ font-size:calc(var(--u)*.92); color:#cfe8d8; padding:calc(var(--u)*.12) 0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.termlog .line b{ color:var(--accent); font-weight:400; margin-right:.6em; }
+
+/* ---------- right rail ---------- */
+.gauge{ margin-bottom:calc(var(--u)*.55); }
+.gauge .row{ display:flex; align-items:center; gap:calc(var(--u)*.55); font-size:calc(var(--u)*.84); }
+.gauge .lbl{ flex:0 0 42%; color:#9dbcab; letter-spacing:.08em; }
+.gauge .pin{ color:#4d6b5c; font-style:normal; }
+.gauge .track{ flex:1 1 auto; height:calc(var(--u)*.5); background:#132018; }
+.gauge .track i{ display:block; height:100%; background:var(--accent); }
+.gauge .val{ flex:0 0 auto; color:#cfe8d8; }
+.noex{ color:var(--accent); font-size:calc(var(--u)*.88); letter-spacing:.1em; line-height:1.5; }
+.ring{ flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:calc(var(--u)*.3); }
+.ring svg{ width:64%; height:auto; }
+.ring .big{ font-size:calc(var(--u)*1.5); color:#eef7f0; }
+.ring .sub{ font-size:calc(var(--u)*.78); color:#4d6b5c; letter-spacing:.12em; }
+.peek{ flex:1 1 auto; min-height:0; overflow:hidden; }
+.peek .item{ font-size:calc(var(--u)*.84); color:#9dbcab; padding:calc(var(--u)*.22) 0;
+  display:flex; gap:calc(var(--u)*.5); }
+.peek .item .b{ color:#2f5f45; }
+
+/* ---------- bottom band ---------- */
+.band{ flex:0 0 auto; display:flex; gap:calc(var(--u)*.85); height:calc(var(--u)*7.2); }
+.band .panel{ display:flex; flex-direction:column; }
+.tools{ flex:0 0 32%; }
+.tools .icons{ flex:1 1 auto; display:flex; align-items:center; justify-content:space-between; }
+.tools .ic{ text-align:center; color:#9dbcab; }
+.tools .ic .g{ height:calc(var(--u)*2.4); display:flex; align-items:center; justify-content:center; }
+.tools .ic .g svg{ height:100%; width:auto; stroke:#cfe8d8; fill:none;
+  stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.tools .ic .n{ font-size:calc(var(--u)*.68); letter-spacing:.1em; color:#5d7d6d; margin-top:calc(var(--u)*.3); }
+.play{ flex:0 0 30%; }
+.play .row{ flex:1 1 auto; display:flex; align-items:center; gap:calc(var(--u)*.9); }
+.play .disc{ flex:0 0 auto; width:calc(var(--u)*3.4); height:calc(var(--u)*3.4); border-radius:50%;
+  background:conic-gradient(from 0deg,#3b1d5e,#8b2b6b,#c2417a,#3b1d5e); display:flex;
+  align-items:center; justify-content:center; }
+.play .disc b{ color:#040806; font-size:calc(var(--u)*1.1); }
+.play .meta .t{ font-size:calc(var(--u)*.92); color:#dcefe2; }
+.play .meta .s{ font-size:calc(var(--u)*.8); color:#5d7d6d; }
+.play .eq{ flex:1 1 auto; display:flex; align-items:flex-end; gap:calc(var(--u)*.16); height:calc(var(--u)*3); }
+.play .eq i{ flex:1 1 0; background:var(--accent); opacity:.8; }
+.quote{ flex:1 1 auto; }
+.quote .q{ flex:1 1 auto; display:flex; align-items:center; font-size:calc(var(--u)*1.02); color:#e6f3ea; }
+.quote .a{ color:#5d7d6d; font-size:calc(var(--u)*.85); }
+.up{ flex:0 0 15.5%; align-items:center; }
+
+/* ---------- footer ---------- */
+.footer{ flex:0 0 auto; height:calc(var(--u)*2.35); display:flex; align-items:stretch;
+  border:1px solid var(--line); background:var(--panel); }
+.footer .cell{ display:flex; align-items:center; gap:calc(var(--u)*.5); padding:0 calc(var(--u)*1);
+  border-right:1px solid var(--line-soft); font-size:calc(var(--u)*.8); letter-spacing:.08em; white-space:nowrap; }
+.footer .cell:last-child{ border-right:0; }
+.footer .k{ color:var(--accent); }
+.footer .v{ color:#cfe8d8; }
+.footer .grow{ flex:1 1 auto; }
+.spark{ display:flex; align-items:flex-end; gap:1px; height:calc(var(--u)*1.15); width:calc(var(--u)*5.2); }
+.spark i{ flex:1 1 0; background:var(--accent); opacity:.75; min-height:1px; }
+</style>
+</head>
+<body>
+<div class="board">
+
+  <div class="main">
+    <!-- ============ LEFT ============ -->
+    <div class="col left">
+      <div class="upper">
+        <div class="a">
+          <div class="weekhead">
+            <h1>WEEK {{ '%02d' % week.number }}</h1>
+            <div class="range">// {{ week.date_range }}</div>
+          </div>
+          <div class="duo">
+            <div class="panel mission">
+              <div class="cap">// Mission Objective</div>
+              {% for line in week.mission %}<p>{{ line }}</p>{% endfor %}
+              <p class="tagline">{{ week.tagline }}</p>
+            </div>
+            <div class="panel focus">
+              <div class="cap">// Focus Mode</div>
+              <div class="prompt">&gt;_<span class="cursor"></span></div>
+              <ul>{% for w in focus_words %}<li>{{ w }}</li>{% endfor %}</ul>
+            </div>
+          </div>
+        </div>
+        <div class="b">
+          <div class="panel kaizen">
+            <div class="ja">{{ week.headline_ja }}</div>
+            <div class="en">{{ week.headline_en }}</div>
+          </div>
+          <div class="panel chart">
+            <div class="head"><span class="up">▲</span> {{ chart.caption }}</div>
+            <div class="bars">
+              {% for b in chart.bars %}
+              <div class="bar {% if b.hot %}hot{% endif %} {% if b.today %}today{% endif %}"
+                   style="height:{{ b.height }}%"></div>
+              {% endfor %}
+            </div>
+            <div class="axis">
+              {% for b in chart.bars %}<span class="{% if b.today %}now{% endif %}">{{ b.label }}</span>{% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel tasks">
+        <div class="cap"><span>// Week {{ '%02d' % week.number }} Tasks</span><span class="sub">STATUS</span></div>
+        <div class="tasklist">
+          {% for t in week.tasks %}
+          <div class="task {% if t.done %}done{% endif %} {% if t.priority == 'high' %}hi{% endif %}">
+            <span class="n">{{ '%02d' % loop.index }}</span>
+            <span class="t">{% if t.carried_from %}<span class="carry">↩</span>{% endif %}{{ t.text }}{% if t.tags %}<span class="tag">#{{ t.tags|join(' #') }}</span>{% endif %}</span>
+            <span class="box"></span>
+          </div>
+          {% else %}
+          <div class="empty">// no tasks yet — run `wb add "your first task"`</div>
+          {% endfor %}
+        </div>
+        <div class="foot">
+          <span>{{ week.done_tasks|length }} / {{ week.tasks|length }} DONE</span>
+          <span class="meter"><i style="width:{{ (week.progress * 100)|round|int }}%"></i></span>
+          <span>{{ (week.progress * 100)|round|int }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CENTER ============ -->
+    <div class="col center">
+      <div class="art"><img src="{{ art }}" alt=""></div>
+
+      <div class="panel win">
+        <div class="bar">
+          <span class="name">// DAILY_REMINDER.EXE</span>
+          <span class="dots"><span></span><span></span><span></span></span>
+        </div>
+        <div class="body">
+          <div class="code">
+            <div><span class="k">while</span> <span class="p">(alive) {</span></div>
+            {% for fn in loop_calls %}<div>&nbsp;&nbsp;<span class="f">{{ fn }}</span><span class="p">();</span></div>{% endfor %}
+            <div><span class="p">}</span></div>
+            <div style="height:.7em"></div>
+            {% for c in loop_comments %}<div class="c">// {{ c }}</div>{% endfor %}
+          </div>
+          <div class="ascii">{{ ascii_art }}<span class="cap2">{{ ascii_caption }}</span><span class="cap3">{{ ascii_caption_en }}</span></div>
+        </div>
+      </div>
+
+      <div class="panel termlog">
+        <div class="cap">// TERMINAL.LOG</div>
+        {% for line in terminal_lines %}
+        <div class="line"><b>✓</b>{{ line }}</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- ============ RIGHT ============ -->
+    <div class="col right">
+      <div class="panel">
+        <div class="cap">// System Status</div>
+        {% for g in gauges %}
+        <div class="gauge"><div class="row">
+          <span class="lbl">{{ g.label }}{% if g.pinned %}<i class="pin">*</i>{% endif %}</span>
+          <span class="track"><i style="width:{{ g.value }}%"></i></span>
+          <span class="val">{{ g.value }}%</span>
+        </div></div>
+        {% endfor %}
+      </div>
+
+      <div class="panel">
+        <div class="noex">// NO EXCUSES<br>ONLY RESULTS</div>
+      </div>
+
+      <div class="panel ring">
+        <svg viewBox="0 0 100 60">
+          <path d="M8 54 A42 42 0 0 1 92 54" fill="none" stroke="#132018" stroke-width="9" stroke-linecap="round"/>
+          <path d="M8 54 A42 42 0 0 1 92 54" fill="none" stroke="{{ accent }}" stroke-width="9"
+                stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="{{ 132 - (132 * week.progress)|round(2) }}"/>
+        </svg>
+        <div class="big">{{ (week.progress * 100)|round|int }}%</div>
+        <div class="sub">WEEK COMPLETE</div>
+      </div>
+
+      <div class="panel peek">
+        <div class="cap">// {{ peek.title }}</div>
+        {% for item in peek.entries %}
+        <div class="item"><span class="b">›</span><span>{{ item }}</span></div>
+        {% else %}
+        <div class="item dim">nothing queued</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BOTTOM BAND ============ -->
+  <div class="band">
+    <div class="panel tools">
+      <div class="cap">// Tools of the Day</div>
+      <div class="icons">
+        {% for t in tools %}<div class="ic"><div class="g">{{ t.svg }}</div><div class="n">{{ t.name }}</div></div>{% endfor %}
+      </div>
+    </div>
+    <div class="panel play">
+      <div class="cap">// Today's Playlist</div>
+      <div class="row">
+        <div class="disc"><b>▶</b></div>
+        <div class="meta">
+          <div class="t">{{ playlist.title }}</div>
+          <div class="s">{{ playlist.note }}</div>
+        </div>
+        <div class="eq">{% for h in audio_spark %}<i style="height:{{ 12 + h * 0.88 }}%"></i>{% endfor %}</div>
+      </div>
+    </div>
+    <div class="panel quote">
+      <div class="cap">// Quote of the Week</div>
+      <div class="q">"{{ week.quote_text }}"</div>
+      <div class="a">— {{ week.quote_author }}</div>
+    </div>
+    <div class="panel up ring">
+      <div class="cap">// Uptime</div>
+      <svg viewBox="0 0 100 56">
+        <path d="M8 50 A42 42 0 0 1 92 50" fill="none" stroke="#132018" stroke-width="8" stroke-linecap="round"/>
+        <path d="M8 50 A42 42 0 0 1 92 50" fill="none" stroke="{{ accent }}" stroke-width="8"
+              stroke-linecap="round" stroke-dasharray="132" stroke-dashoffset="{{ 132 - 132 * sys.uptime_gauge / 100 }}"/>
+      </svg>
+      <div class="big">{{ sys.uptime }}</div>
+      <div class="sub">KEEP IT RUNNING</div>
+    </div>
+  </div>
+
+  <!-- ============ FOOTER ============ -->
+  <div class="footer">
+    <div class="cell"><span class="k">USER:</span><span class="v">{{ sys.user }}</span></div>
+    <div class="cell"><span class="k">HOST:</span><span class="v">{{ sys.host }}</span></div>
+    <div class="cell"><span class="k">OS:</span><span class="v">{{ sys.os }}</span></div>
+    <div class="cell grow"><span class="k">CPU:</span>
+      <span class="spark">{% for h in sys.cpu_spark %}<i style="height:{{ h }}%"></i>{% endfor %}</span>
+      <span class="v">{{ sys.cpu }}%</span></div>
+    <div class="cell grow"><span class="k">RAM:</span>
+      <span class="spark">{% for h in sys.ram_spark %}<i style="height:{{ h }}%"></i>{% endfor %}</span>
+      <span class="v">{{ sys.ram }}%</span></div>
+    <div class="cell grow"><span class="k">DISK:</span>
+      <span class="spark">{% for h in sys.disk_spark %}<i style="height:{{ h }}%"></i>{% endfor %}</span>
+      <span class="v">{{ sys.disk }}%</span></div>
+    <div class="cell grow"><span class="k">NET:</span>
+      <span class="spark">{% for h in sys.net_spark %}<i style="height:{{ h }}%"></i>{% endfor %}</span>
+      <span class="v">↑ {{ sys.net_label }}</span></div>
+    <div class="cell"><span class="k">TIME:</span><span class="v">{{ sys.time }}</span></div>
+  </div>
+
+</div>
+</body>
+</html>
