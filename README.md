@@ -29,7 +29,7 @@ Two halves of one loop:
 ```bash
 cd ~/workFiles/freelanceFiles/wallpapersetter   # wherever you cloned it
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -e ".[dev]"
 .venv/bin/playwright install chromium      # one-off, ~150MB
 mkdir -p ~/Downloads/desktop_plans
 ./wb doctor                                 # checks everything above
@@ -393,7 +393,6 @@ A nice optional extra — refresh the flavour text every Monday morning:
 ## Tests
 
 ```bash
-.venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest
 ```
 

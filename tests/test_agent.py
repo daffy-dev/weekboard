@@ -6,6 +6,7 @@ something malformed, and that must never corrupt the board.
 
 import pytest
 
+from weekboard import agent
 from weekboard.agent import AgentError, _extract_json, api_key, apply_ops, backend
 from weekboard.config import Config
 from weekboard.store import Store
@@ -123,5 +124,6 @@ class TestKeyResolution:
 
     def test_missing_key_falls_back_to_the_cli(self, tmp_path, monkeypatch):
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.setattr(agent, "PROJECT_DIR", tmp_path)
         config = Config(backend="api", api_key_file=str(tmp_path / "nope"))
         assert backend(config) == "cli"

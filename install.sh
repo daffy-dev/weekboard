@@ -7,7 +7,7 @@ ROOT="$PWD"
 echo "→ virtualenv"
 [ -d .venv ] || python3 -m venv .venv
 .venv/bin/pip install --quiet --upgrade pip
-.venv/bin/pip install --quiet -r requirements.txt
+.venv/bin/pip install --quiet -e ".[dev]"
 
 echo "→ chromium for rendering"
 .venv/bin/playwright install chromium
