@@ -53,7 +53,7 @@ current week — the board only shows the week you're in.
 
 SHIPPED reads 0 until you list your repos in `wb config --edit`:
 
-    "git_repos": ["~/workFiles/freelanceFiles/pungar.is", "..."]
+    "git_repos": ["~/code/client-project", "..."]
 
 Or point it at GitHub instead of local clones (sees every machine you push
 from, not just this one):

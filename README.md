@@ -141,7 +141,7 @@ loads its whole system prompt and tool definitions first. Roughly 98% of it is
 scaffolding we never asked for, and `--system-prompt` only trims it to ~39,500.
 
 For a job this small — read a short list, emit some JSON — that's the wrong shape.
-The API path sends only our prompt:
+The API path sends only that ~600-token prompt, nothing else.
 
 One key works for everything — Anthropic keys aren't tied to a project or a model,
 so the one you already use elsewhere is fine. Simplest way: drop it in this project's
@@ -217,7 +217,7 @@ opens it.
 Point `git_repos` at the things you actually ship and the terminal log fills itself:
 
 ```json
-"git_repos": ["~/workFiles/freelanceFiles/bookflow", "~/workFiles/holmurheilsa"]
+"git_repos": ["~/code/client-project", "~/code/side-project"]
 ```
 
 ### Safe areas
@@ -353,7 +353,7 @@ rm data/weeks/*.json     # start clean
 
 First run starts empty — just the default mission/quote, no tasks — so
 `wb add` your own. `examples/sample-week.json` shows what a populated week's
-JSON looks like (it's also what the screenshot at the top was rendered from);
+JSON looks like (it's also what the demo at the top was rendered from);
 copy it into `data/weeks/` under a real week key if you want to poke at it.
 
 ---
@@ -392,13 +392,32 @@ A nice optional extra — refresh the flavour text every Monday morning:
 
 ---
 
+## A dedicated Space
+
+A wallpaper only helps if you actually see it, and a normal desktop is usually buried
+under windows. On a tiling setup this is easy to fix: give the board an empty
+workspace of its own — nothing ever opens there, so the wallpaper fills the screen —
+and bind a key to jump straight to it. With [AeroSpace](https://github.com/nikitabobko/AeroSpace):
+
+```toml
+# ~/.aerospace.toml
+[mode.main.binding]
+alt-d = 'workspace dashboard'   # or whatever key/name you like
+```
+
+Now checking status is a keystroke: `option-d` flips to the empty space showing the
+board — gauges, task list, TERMINAL.LOG — and the key for wherever you came from
+takes you straight back. No app to switch to, nothing to tear down.
+
+---
+
 ## Tests
 
 ```bash
 .venv/bin/pytest
 ```
 
-127 tests covering the ISO week arithmetic (including 53-week years and the New Year
+128 tests covering the ISO week arithmetic (including 53-week years and the New Year
 boundary), store round-trips and the undo history, the ops applier against malformed
 model replies, key resolution, GitHub event parsing and caching, the layout maths, and
 the TUI (mounted headlessly via Textual's own test harness — this is what catches the
