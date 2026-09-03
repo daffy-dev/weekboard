@@ -87,7 +87,7 @@ What's adjustable, and how, panel by panel:
 | Tools of the day | `"tools"` in `wb config --edit` — up to 7 names from the built-in icon set (`VS CODE`, `ZSH`, `GIT`, `NOTION`, `DOCKER`, `FIGMA`, `COFFEE`, `CLAUDE`, `SLACK`, `PYTHON`, `LINEAR`, `MUSIC`, `DESIGN`, `SHIP`, `CURSOR`, `CHROME`, `GITHUB`) — anything else renders a plain diamond |
 | Playlist | `wb flavor` (re-picked to fit the week's mood), or `wb ai "set the playlist to ..."` — always fictional flavour text, never a real artist/song |
 | System Status gauges | computed automatically; pin one with `wb status focus 90`, back to auto with `wb status focus auto` |
-| Accent color / artwork / ASCII character | `"accent"` (hex) in config; `wb ascii --use ninja-b` or `wb ascii yourphoto.jpg`; `wb art yourphoto.jpg` or `wb art --generate "..."` for the background photo |
+| Accent color / artwork / ASCII character | `"accent"` (hex) in config; `wb ascii --use shuriken` or `wb ascii yourphoto.jpg`; `wb art yourphoto.jpg` or `wb art --generate "..."` for the background photo |
 
 Not yet configurable — hardcoded in `render.py` / the template, but a quick
 add if wanted: the **Focus Mode** word loop (`FOCUS / BUILD / DELIVER /

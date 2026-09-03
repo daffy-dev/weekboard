@@ -311,8 +311,8 @@ Three pieces ship with it:
 
 ```bash
 wb ascii --list                 # what's in the gallery
-wb ascii --use ninja-a          # the detailed braille one (default)
-wb ascii --use ninja-b
+wb ascii --use kitsune          # braille fox mask (default)
+wb ascii --use shuriken         # braille ninja star
 wb ascii --use ninja-line       # the hand-drawn character version
 ```
 
