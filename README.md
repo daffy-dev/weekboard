@@ -477,7 +477,10 @@ network needed — they run in a couple of seconds.
   `document.fonts.ready` instead of a fixed 350ms took off the rest.
 - **The stats are real.** CPU, RAM, disk, network and uptime come from `psutil`; the
   terminal log is your actual recent commits; the bar chart is tasks you actually
-  completed, by day.
+  completed, by day. The little trend sparklines under CPU/RAM/DISK/NET are real too —
+  each render appends its reading to `data/.stats_history.json` (gitignored,
+  per-machine) and plots the last 24 — not decoration. Only the waveform under the
+  playlist is fake, because the playlist itself is fictional flavour text.
 
 ### Layout of the code
 

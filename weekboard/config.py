@@ -99,6 +99,12 @@ class Config:
         """Where the detected display size is remembered."""
         return self.data_path / ".display.json"
 
+    @property
+    def stats_history_cache(self) -> Path:
+        """Recent CPU/RAM/disk/network readings, so the footer's trend
+        sparklines plot real history instead of decoration."""
+        return self.data_path / ".stats_history.json"
+
     def resolve_size(self) -> tuple[int, int]:
         """Render size: whatever the config pins, else this machine's display."""
         if self.width and self.height:

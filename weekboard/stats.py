@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import platform
 import shutil
 import socket
@@ -15,6 +16,10 @@ try:
 except ImportError:  # pragma: no cover - psutil is a declared dependency
     psutil = None
 
+# How many past renders' worth of CPU/RAM/disk/net readings to keep, matching
+# the sparklines' own default width so every bar shown is a real sample.
+HISTORY_LIMIT = 24
+
 
 def _sparkline(values: list[float], width: int = 24) -> list[int]:
     """Normalise values to 0-100 heights for a bar sparkline."""
@@ -27,13 +32,46 @@ def _sparkline(values: list[float], width: int = 24) -> list[int]:
 
 
 def _pseudo_series(seed: float, width: int = 24) -> list[float]:
-    """Deterministic wobble used when no history is available."""
+    """Deterministic wobble used where there's genuinely nothing real to plot
+    (the playlist's audio-visualizer bars — the playlist itself is fictional
+    flavour text, so a fake waveform under it is honest, not decoration
+    pretending to be data).
+    """
     import math
 
     return [
         abs(math.sin(seed * 0.7 + i * 0.9)) * 0.6 + abs(math.cos(i * 0.4)) * 0.4
         for i in range(width)
     ]
+
+
+def _load_history(path: Path) -> dict[str, list[float]]:
+    """Read the on-disk trend history, tolerating a missing or corrupt file."""
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def _record_history(path: Path, sample: dict[str, float]) -> dict[str, list[float]]:
+    """Append this render's real readings to the trend history on disk.
+
+    Best-effort: a write failure (read-only disk, odd permissions) shouldn't
+    stop a render, it should just cost that one render's worth of history.
+    """
+    history = _load_history(path)
+    for key, value in sample.items():
+        series = history.get(key, [])
+        series.append(value)
+        history[key] = series[-HISTORY_LIMIT:]
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(history), encoding="utf-8")
+    except OSError:
+        pass
+    return history
 
 
 def uptime_string() -> tuple[str, float]:
@@ -157,11 +195,13 @@ def collect(config) -> dict:
             - (net_counters.bytes_sent + net_counters.bytes_recv),
         )
         net_rate = delta_bytes / 0.12 / 1024
-        cores = psutil.cpu_percent(interval=0.0, percpu=True)
+        history = _record_history(
+            config.stats_history_cache, {"cpu": cpu, "ram": ram, "disk": disk, "net": net_rate}
+        )
     else:
         cpu = ram = disk = 0.0
         net_rate = 0.0
-        cores = []
+        history = _load_history(config.stats_history_cache)
 
     if net_rate > 1024:
         net_label = f"{net_rate / 1024:.1f} MB/s"
@@ -176,10 +216,13 @@ def collect(config) -> dict:
         "ram": round(ram),
         "disk": round(disk),
         "net_label": net_label,
-        "cpu_spark": _sparkline(cores or _pseudo_series(seed)),
-        "ram_spark": _sparkline(_pseudo_series(seed + 11)),
-        "disk_spark": _sparkline(_pseudo_series(seed + 23)),
-        "net_spark": _sparkline(_pseudo_series(seed + 37)),
+        # Real trend lines, from readings actually taken at past renders —
+        # the pseudo series is only a first-run fallback, before there's any
+        # history yet.
+        "cpu_spark": _sparkline(history.get("cpu") or _pseudo_series(seed)),
+        "ram_spark": _sparkline(history.get("ram") or _pseudo_series(seed + 11)),
+        "disk_spark": _sparkline(history.get("disk") or _pseudo_series(seed + 23)),
+        "net_spark": _sparkline(history.get("net") or _pseudo_series(seed + 37)),
         "audio_spark": _sparkline(_pseudo_series(seed + 5), width=40),
         "uptime": up_text,
         "uptime_gauge": up_gauge,
