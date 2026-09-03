@@ -1,4 +1,4 @@
-# wallpapersetter + weekboard
+# weekboard
 
 A terminal to-do list that redraws itself as your desktop wallpaper every time you
 change something — tasks, gauges, quote of the week, all of it, live on your desktop
