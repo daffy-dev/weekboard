@@ -82,6 +82,39 @@ async def test_selected_row_is_visibly_highlighted(store):
 
 
 @pytest.mark.asyncio
+async def test_background_stats_refresh_does_not_rebuild_the_task_list(store):
+    """_apply_stats() must repaint only the gauges, not tear down the ListView.
+
+    Rebuilding the whole list on a background stats tick (which fires after
+    every save and could in principle fire on a timer) would flicker or, on
+    an unlucky race, disturb the list while someone is navigating it — for a
+    panel that only ever displays FOCUS/MOMENTUM/SHIPPED/DONE numbers.
+    """
+    from textual.widgets import ListView
+
+    week = store.load("2026-W36")
+    week.add("a")
+    week.add("b")
+    week.add("c")
+    store.save(week)
+
+    app = Board("2026-W36")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        listing = app.query_one("#tasks", ListView)
+        await pilot.press("down")
+        await pilot.pause()
+        before_index = listing.index
+        before_ids = [id(child) for child in listing.children]
+
+        app._apply_stats({"commits": [], "commit_count": 3})
+        await pilot.pause()
+
+        assert listing.index == before_index
+        assert [id(child) for child in listing.children] == before_ids
+
+
+@pytest.mark.asyncio
 async def test_survives_background_stats_refresh(store):
     """The gauges repaint once the off-thread stats worker lands; must not crash."""
     import asyncio

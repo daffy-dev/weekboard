@@ -15,7 +15,7 @@ Say yes when macOS asks about controlling System Events, or the wallpaper never 
 
     wb doctor        # confirms everything, incl. which AI backend is live
 
-The API key is already in .env — nothing to configure.
+The API key is already in `.env` — nothing to configure.
 
 ## Every day
 
@@ -56,6 +56,12 @@ SHIPPED reads 0 until you list your repos in `wb config --edit`:
 
     "git_repos": ["~/workFiles/freelanceFiles/pungar.is", "..."]
 
+Or point it at GitHub instead of local clones (sees every machine you push
+from, not just this one):
+
+    wb sync                    force-refresh commit activity right now
+    "commit_source": "auto"    "auto" (default) | "github" | "git"
+
 ## Now and then
 
     wb ascii --list           swap the character art
@@ -63,29 +69,32 @@ SHIPPED reads 0 until you list your repos in `wb config --edit`:
     wb config --edit          settings
     wb render                 force a redraw
     wb doctor                 health check
+    wb sync                   force-refresh commit activity from GitHub/git
 
 ## Cost
 
 Only `wb ai`, `wb flavor` and `wb rollover --ai` call a model — via the API on
 Haiku, about $0.001 each. Everything else is local and free.
 
-----
-Here's the full map of what's actually adjustable right now, panel by panel:
+## Customization map
 
-Mission Objective — fully yours. wb mission "Ship things." "Help people." --tagline "Level up." sets it by hand (up to 4 lines + a tagline), or wb flavor lets the model rewrite it based on what's actually on your board that week. It's stored per-week, so it's fine for it to change every week.
+What's adjustable, and how, panel by panel:
 
-Quote of the week — same deal, just no dedicated flag yet: wb flavor writes it, or you can say it directly to the agent — wb ai "set the quote to 'move fast' by nobody in particular". It's a real op the model understands (quote, with text + author).
+| panel | how |
+|---|---|
+| Mission Objective | `wb mission "line one" "line two" --tagline "..."`, or `wb flavor` (AI, tuned to this week's actual tasks) |
+| Quote of the week | `wb flavor`, or `wb ai "set the quote to '...' by ..."` |
+| Kaizen headline (改善は毎日の積み重ねだ) | `wb flavor` / `wb ai` only — no dedicated flag yet |
+| Tools of the day | `"tools"` in `wb config --edit` — up to 7 names from the built-in icon set (`VS CODE`, `ZSH`, `GIT`, `NOTION`, `DOCKER`, `FIGMA`, `COFFEE`, `CLAUDE`, `SLACK`, `PYTHON`, `LINEAR`, `MUSIC`, `DESIGN`, `SHIP`, `CURSOR`, `CHROME`, `GITHUB`) — anything else renders a plain diamond |
+| Playlist | `"playlist_title"` / `"playlist_note"` in config — text only, no real audio hookup |
+| System Status gauges | computed automatically; pin one with `wb status focus 90`, back to auto with `wb status focus auto` |
+| Accent color / artwork / ASCII character | `"accent"` (hex) in config; `wb ascii --use ninja-b` or `wb ascii yourphoto.jpg`; `"art"` in config for the background photo |
 
-Kaizen headline (the 改善は毎日の積み重ねだ / KAIZEN IS DAILY block near the top) — also per-week, also only settable via wb flavor / wb ai right now, no manual CLI flag.
+Not yet configurable — hardcoded in `render.py` / the template, but a quick
+add if wanted: the **Focus Mode** word loop (`FOCUS / BUILD / DELIVER /
+REPEAT`), the **DAILY_REMINDER.EXE** code block (`while(alive){...}` and its
+comments), and the **"NO EXCUSES / ONLY RESULTS"** panel.
 
-Tools of the day — config, not per-week: "tools" in config.json (wb config --edit), a list of up to 7 names. It's not free text though — each name maps to a built-in icon (VS CODE, ZSH, GIT, NOTION, DOCKER, FIGMA, COFFEE, CLAUDE, SLACK, PYTHON, LINEAR, MUSIC, DESIGN, SHIP, CURSOR, CHROME, GITHUB); anything else just renders a plain diamond.
-
-Playlist — config: "playlist_title" and "playlist_note". Static text, no actual audio hookup — it's just for vibes.
-
-System Status gauges (FOCUS/MOMENTUM/SHIPPED/DONE) — computed automatically from your tasks and commits, but any one can be pinned: wb status focus 90, back to auto with wb status focus auto.
-
-Accent color, artwork, ASCII character — "accent" (hex) in config; wb ascii --use ninja-b / wb ascii yourphoto.jpg for the character in DAILY_REMINDER.EXE; "art" in config points at the background photo (there's also art_prompt if you regenerate it with an image model later).
-
-Now the honest part — Focus Mode (that FOCUS / BUILD / DELIVER / REPEAT word loop) and the DAILY_REMINDER.EXE code block (while(alive){ focus(); build(); ship(); ...} and its two comment lines) and the "NO EXCUSES / ONLY RESULTS" panel are currently just hardcoded constants in render.py/the template — there's no config field or command for any of them yet. If you want those editable too (say, focus_words in config, or a wb loop command for the code block), that's a quick add — just say the word and I'll wire it up the same way tools/playlist work.
-
-And as a catch-all: everything per-week (mission, quote, headline, tasks, overrides) lives in plain JSON at data/weeks/2026-W36.json, so if a command doesn't exist for something yet, hand-editing that file always works too.
+Everything per-week (mission, quote, headline, tasks, overrides) also just
+lives in plain JSON at `data/weeks/2026-W36.json` — hand-editing it always
+works, even for things no command covers yet.

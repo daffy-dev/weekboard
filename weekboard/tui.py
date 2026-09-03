@@ -134,15 +134,7 @@ class Board(App):
 
         mission = "\n".join(self.week.mission) + f"\n\n{self.week.tagline}"
         self.query_one("#mission", Static).update(f"// MISSION\n\n{mission}\n")
-        from . import metrics
-
-        computed = metrics.compute(self.week, self.store, self.sys_stats, self.store.config)
-        gauges = "\n".join(
-            f"{g['label']:<11}{'█' * (g['value'] // 10)}{'░' * (10 - g['value'] // 10)} "
-            f"{g['value']:>3}%{'*' if g['pinned'] else ''}"
-            for g in computed
-        )
-        self.query_one("#gauges", Static).update(f"\n// STATUS\n\n{gauges}\n")
+        self._repaint_gauges()
         self.query_one("#quote", Static).update(
             f'\n// QUOTE\n\n"{self.week.quote_text}"\n— {self.week.quote_author}'
         )
@@ -152,6 +144,23 @@ class Board(App):
         self.query_one("#bar", Static).update(
             f" {'█' * filled}{'░' * (40 - filled)}  {done}/{total}  {int(self.week.progress * 100)}%"
         )
+
+    def _repaint_gauges(self) -> None:
+        """Redraw just the STATUS panel from the current week + sys_stats.
+
+        Split out of refresh_board() so the background stats worker can
+        update FOCUS/MOMENTUM/SHIPPED/DONE without tearing down and
+        rebuilding the whole task ListView just to change four numbers.
+        """
+        from . import metrics
+
+        computed = metrics.compute(self.week, self.store, self.sys_stats, self.store.config)
+        gauges = "\n".join(
+            f"{g['label']:<11}{'█' * (g['value'] // 10)}{'░' * (10 - g['value'] // 10)} "
+            f"{g['value']:>3}%{'*' if g['pinned'] else ''}"
+            for g in computed
+        )
+        self.query_one("#gauges", Static).update(f"\n// STATUS\n\n{gauges}\n")
 
     def note(self, message: str) -> None:
         """Write a transient line to the status strip."""
@@ -181,9 +190,16 @@ class Board(App):
         self.call_from_thread(self._apply_stats, fresh)
 
     def _apply_stats(self, sys_stats: dict) -> None:
-        """Store freshly collected stats and repaint (must run on the UI thread)."""
+        """Store freshly collected stats and repaint just the gauges.
+
+        Must run on the UI thread. Deliberately not a full refresh_board():
+        this fires on its own timer/after every save, and a stats-only
+        change has nothing to do with the task list — rebuilding it too
+        would mean an unrelated background tick can flicker or steal the
+        list's scroll position while you're navigating it.
+        """
         self.sys_stats = sys_stats
-        self.refresh_board(self.query_one("#tasks", ListView).index)
+        self._repaint_gauges()
 
     @work(thread=True, exclusive=True)
     def rerender(self) -> None:

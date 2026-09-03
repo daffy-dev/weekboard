@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -117,11 +118,25 @@ class Config:
 
 
 def load_config() -> Config:
-    """Read config.json, falling back to defaults for anything missing."""
+    """Read config.json, falling back to defaults for anything missing.
+
+    A config that fails to parse falls back to every default silently — no
+    accent, tools, git_repos, or anything else you'd set, with no sign why.
+    That's a bad surprise, so this warns on stderr instead of just eating it;
+    every command still runs, since a wallpaper board shouldn't refuse to
+    draw over a bad config file.
+    """
     if CONFIG_PATH.exists():
         try:
             raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as exc:
+            print(
+                f"weekboard: {CONFIG_PATH} is not valid JSON ({exc}) — "
+                f"falling back to defaults for everything. Your settings are "
+                f"still on disk; fix the file (or `wb config --edit`) and "
+                f"they'll be picked up again.",
+                file=sys.stderr,
+            )
             raw = {}
         known = {k: v for k, v in raw.items() if k in Config.__annotations__}
         return Config(**known)
