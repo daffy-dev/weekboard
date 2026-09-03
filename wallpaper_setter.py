@@ -111,6 +111,22 @@ class WallpaperWatcher:
                 return
             self._applied = candidate
             log(f"Wallpaper set: {candidate.path.name}")
+            self._clean_others(candidate.path)
+
+    def _clean_others(self, keep: Path) -> None:
+        """Delete every other image in the folder now that keep is applied."""
+        try:
+            entries = list(self.folder.iterdir())
+        except OSError:
+            return
+        for path in entries:
+            if not is_image(path) or path.resolve() == keep:
+                continue
+            try:
+                path.unlink()
+                log(f"Removed old wallpaper: {path.name}")
+            except OSError as exc:
+                log(f"Could not remove {path.name}: {exc}")
 
     def schedule(self) -> None:
         """Debounce: wait until events stop before applying."""
