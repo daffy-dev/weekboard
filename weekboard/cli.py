@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 import sys
 from pathlib import Path
 
@@ -470,6 +471,60 @@ def ascii_cmd(ctx, image, width, mode, invert, threshold, no_dither, use_name, d
     target.write_text(art + "\n", encoding="utf-8")
     click.echo(f"\n{GREEN}  ✓{RESET} {DIM}saved to {target}{RESET}")
     _render_if_enabled(ctx, Store(), Store().load())
+
+
+@cli.command(name="art")
+@click.argument("image", type=click.Path(exists=True, dir_okay=False), required=False)
+@click.option("--generate", "prompt", default=None, metavar="PROMPT",
+              help="Describe a scene; the model writes it as SVG and it's rendered in.")
+@click.option("--reset", is_flag=True, help="Go back to the bundled default.")
+@click.pass_context
+def art_cmd(ctx, image, prompt, reset):
+    """Set the background art: point at your own image, generate one, or show the current one.
+
+    wb art photo.jpg                 use your own image
+    wb art --generate "rainy Kyoto street at night, neon signs"
+    wb art --reset                   back to the bundled default
+    """
+    store = Store()
+    config_obj = store.config
+
+    if reset:
+        config_obj.art = ""
+        save_config(config_obj)
+        click.echo(f"{GREEN}  ✓{RESET} {DIM}back to the bundled default{RESET}")
+        _render_if_enabled(ctx, store, store.load())
+        return
+
+    if prompt:
+        from . import artgen
+
+        click.echo(f"{DIM}  generating…{RESET}")
+        try:
+            path = artgen.generate(config_obj, prompt)
+        except artgen.ArtGenError as exc:
+            raise click.ClickException(str(exc))
+        config_obj.art = str(path)
+        config_obj.art_prompt = prompt
+        save_config(config_obj)
+        click.echo(f"{GREEN}  ✓{RESET} {path}")
+        _render_if_enabled(ctx, store, store.load())
+        return
+
+    if image:
+        art_dir = config_obj.data_path / "art"
+        art_dir.mkdir(parents=True, exist_ok=True)
+        dest = art_dir / Path(image).name
+        shutil.copy(image, dest)
+        config_obj.art = str(dest)
+        save_config(config_obj)
+        click.echo(f"{GREEN}  ✓{RESET} {dest}")
+        _render_if_enabled(ctx, store, store.load())
+        return
+
+    current = config_obj.art_path
+    kind = "bundled default" if not config_obj.art else "custom"
+    click.echo(f"  {current}{DIM}  ({kind}){RESET}")
 
 
 @cli.command()

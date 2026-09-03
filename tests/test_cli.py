@@ -166,6 +166,64 @@ class TestConfigAndDoctor:
         assert str(cli_env.weeks_path) in result.output
 
 
+class TestArt:
+    def test_shows_bundled_default_with_no_args(self, cli_env, runner):
+        result = runner.invoke(cli_mod.cli, ["--no-render", "art"])
+        assert result.exit_code == 0, result.output
+        assert "bundled default" in result.output
+
+    def test_use_copies_the_image_and_points_config_at_it(self, cli_env, runner, tmp_path):
+        source = tmp_path / "photo.jpg"
+        source.write_bytes(b"not a real jpg, just a marker for the test")
+
+        result = runner.invoke(cli_mod.cli, ["--no-render", "art", str(source)])
+        assert result.exit_code == 0, result.output
+
+        dest = cli_env.data_path / "art" / "photo.jpg"
+        assert dest.exists()
+        assert dest.read_bytes() == source.read_bytes()
+        assert cli_env.art == str(dest)
+
+        result = runner.invoke(cli_mod.cli, ["--no-render", "art"])
+        assert "custom" in result.output
+
+    def test_generate_calls_the_model_and_points_config_at_the_result(
+        self, cli_env, runner, monkeypatch, tmp_path
+    ):
+        from weekboard import artgen as artgen_mod
+
+        fake_path = tmp_path / "generated.jpg"
+        fake_path.write_bytes(b"fake render output")
+
+        monkeypatch.setattr(artgen_mod, "generate", lambda config, prompt, timeout=120: fake_path)
+        result = runner.invoke(
+            cli_mod.cli, ["--no-render", "art", "--generate", "neon rainy street, no logos"]
+        )
+        assert result.exit_code == 0, result.output
+        assert str(fake_path) in result.output
+        assert cli_env.art == str(fake_path)
+        assert cli_env.art_prompt == "neon rainy street, no logos"
+
+    def test_generate_surfaces_art_errors_cleanly(self, cli_env, runner, monkeypatch):
+        from weekboard import artgen as artgen_mod
+
+        def raise_error(config, prompt, timeout=120):
+            raise artgen_mod.ArtGenError("the model didn't return an SVG")
+
+        monkeypatch.setattr(artgen_mod, "generate", raise_error)
+        result = runner.invoke(cli_mod.cli, ["--no-render", "art", "--generate", "anything"])
+        assert result.exit_code != 0
+        assert "didn't return an SVG" in result.output
+        # A failed generation must not leave the config pointed at nothing useful.
+        assert cli_env.art == ""
+
+    def test_reset_clears_a_custom_art_path(self, cli_env, runner):
+        cli_env.art = "/some/custom/path.jpg"
+        result = runner.invoke(cli_mod.cli, ["--no-render", "art", "--reset"])
+        assert result.exit_code == 0, result.output
+        assert cli_env.art == ""
+
+
 class TestAi:
     def test_ai_applies_ops_on_confirm(self, cli_env, runner, monkeypatch):
         """`wb ai` end to end, with the model call itself mocked out."""

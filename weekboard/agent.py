@@ -153,10 +153,24 @@ def ask(config: Config, system: str, user: str, timeout: int = 90) -> dict:
     """Send one prompt to the configured backend and return the parsed JSON reply."""
     if backend(config) == "api":
         return _extract_json(_ask_api(config, system, user, timeout))
-    return _ask_cli(config, system, user, timeout)
+    return _extract_json(_ask_cli_text(config, system, user, timeout))
 
 
-def _ask_api(config: Config, system: str, user: str, timeout: int) -> str:
+def ask_text(config: Config, system: str, user: str, timeout: int = 90, max_tokens: int | None = None) -> str:
+    """Send one prompt to the configured backend and return the raw text reply.
+
+    For callers that want something other than the {"ops": [...]}-shaped JSON
+    every other prompt in this module asks for — e.g. art generation, which
+    wants a raw SVG document back and needs a much bigger `max_tokens` than
+    the short JSON replies everything else here asks for (hence the override
+    rather than just bumping api_max_tokens for every call).
+    """
+    if backend(config) == "api":
+        return _ask_api(config, system, user, timeout, max_tokens=max_tokens)
+    return _ask_cli_text(config, system, user, timeout)
+
+
+def _ask_api(config: Config, system: str, user: str, timeout: int, max_tokens: int | None = None) -> str:
     """Call the Messages API directly. Cheapest path: no agent scaffolding is sent.
 
     Uses urllib so this needs no extra dependency.
@@ -171,7 +185,7 @@ def _ask_api(config: Config, system: str, user: str, timeout: int) -> str:
     payload = json.dumps(
         {
             "model": config.api_model,
-            "max_tokens": config.api_max_tokens,
+            "max_tokens": max_tokens or config.api_max_tokens,
             "system": system,
             "messages": [{"role": "user", "content": user}],
         }
@@ -200,7 +214,7 @@ def _ask_api(config: Config, system: str, user: str, timeout: int) -> str:
     return "\n".join(blocks)
 
 
-def _ask_cli(config: Config, system: str, user: str, timeout: int) -> dict:
+def _ask_cli_text(config: Config, system: str, user: str, timeout: int) -> str:
     """Call the local claude CLI. Convenient, but it sends its own agent scaffolding."""
     if not available(config):
         raise AgentError(
@@ -216,7 +230,7 @@ def _ask_cli(config: Config, system: str, user: str, timeout: int) -> dict:
         raise AgentError("The model took too long to answer.") from exc
     if result.returncode != 0:
         raise AgentError((result.stderr or result.stdout or "claude CLI failed").strip()[:400])
-    return _extract_json(result.stdout)
+    return result.stdout
 
 
 def _board_context(store, weeks: int = 3) -> str:

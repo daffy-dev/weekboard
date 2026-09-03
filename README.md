@@ -203,7 +203,8 @@ opens it.
 | `inset_left_pct` / `inset_right_pct` | same for a vertical dock |
 | `commit_target` | commits/week that reads as a full `SHIPPED` gauge (default 15) |
 | `keep_renders` | how many old PNGs to keep before pruning (default 3) |
-| `art` | path to the background artwork; empty uses the bundled one |
+| `art` | path to the background artwork; empty uses the bundled one — see **Swapping the artwork** |
+| `art_prompt` | set automatically by `wb art --generate`; what the current art was asked for |
 | `accent` | the green, as a hex colour |
 | `git_repos` | repos to pull recent commits from for `TERMINAL.LOG` (used by the `git` source, and as the `auto` fallback) |
 | `commit_days` | window for `TERMINAL.LOG` and `SHIPPED`, in days (default 7) |
@@ -339,10 +340,26 @@ a dark, low-contrast photo dithers into noise no matter the settings.
 
 ### Swapping the artwork
 
-The bundled art is cropped from your original mockup. Drop any image in and point
-`art` at it. To regenerate it periodically with an image model, write the new file and
-run `wb render` — the layout doesn't care where the image came from. `art_prompt` in
-the config holds a starting prompt for that.
+```bash
+wb art photo.jpg                                    # use your own image
+wb art --generate "rainy Kyoto street, neon signs"   # let the model draw one
+wb art --reset                                       # back to the bundled default
+wb art                                                # show the current one
+```
+
+`wb art photo.jpg` copies the image into `data/art/` (gitignored, alongside `data/weeks/`)
+and points `art` at it — the layout doesn't care where the image came from, any
+resolution works.
+
+`wb art --generate "..."` doesn't call an image model at all: it asks the same backend
+`wb ai`/`wb flavor` already use (the local `claude` CLI, or the API if that's your
+backend) to write the scene as a self-contained SVG — shapes and gradients, not
+pixels — then renders that through the same headless-Chromium screenshot render.py
+uses for the dashboard itself. No extra API key, no extra dependency. The system
+prompt explicitly forbids reproducing a specific copyrighted character, logo, or
+brand, so what comes back is always an original scene, never a redraw of something
+recognizable. Takes 15-30s; the prompt is saved to `art_prompt` in the config so you
+can tell what a given render was asked for later.
 
 ### Why it looks like this
 
@@ -430,7 +447,7 @@ takes you straight back. No app to switch to, nothing to tear down.
 .venv/bin/pytest
 ```
 
-128 tests covering the ISO week arithmetic (including 53-week years and the New Year
+144 tests covering the ISO week arithmetic (including 53-week years and the New Year
 boundary), store round-trips and the undo history, the ops applier against malformed
 model replies, key resolution, GitHub event parsing and caching, the layout maths, and
 the TUI (mounted headlessly via Textual's own test harness — this is what catches the
@@ -471,7 +488,8 @@ weekboard/
   model.py                 Week / Task / ISO-week maths
   store.py                 JSON per week, atomic writes
   render.py                Jinja2 -> HTML -> Chromium -> PNG
-  agent.py                 claude CLI shell-out and operation-applying
+  agent.py                 claude CLI/API shell-out and operation-applying
+  artgen.py                wb art --generate: model writes SVG, Chromium renders it
   stats.py                 psutil + commit telemetry (picks git vs. github)
   github.py                GitHub events via `gh api`, cached
   templates/dashboard.html.j2
