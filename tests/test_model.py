@@ -109,6 +109,25 @@ class TestWeek:
         assert restored.tasks[0].tags == ["sales"]
         assert restored.overrides == {"focus": 90}
 
+    def test_playlist_defaults(self):
+        week = Week(key="2026-W36")
+        assert week.playlist_title == "Lo-fi Beats / Japanese City Pop"
+        assert week.playlist_note == "To keep the mind in flow state."
+
+    def test_round_trip_preserves_playlist(self):
+        week = Week(key="2026-W36")
+        week.playlist_title = "Heads-Down Techno"
+        week.playlist_note = "For the deep-focus stretch."
+        restored = Week.from_dict(week.to_dict())
+        assert restored.playlist_title == "Heads-Down Techno"
+        assert restored.playlist_note == "For the deep-focus stretch."
+
+    def test_missing_playlist_falls_back_to_the_default(self):
+        # A week file saved before playlist_title/playlist_note existed.
+        week = Week.from_dict({"key": "2026-W36"})
+        assert week.playlist_title == "Lo-fi Beats / Japanese City Pop"
+        assert week.playlist_note == "To keep the mind in flow state."
+
     def test_unknown_keys_from_older_files_are_ignored(self):
         # v1 files carried a `note` field that no longer exists.
         task = Task.from_dict({"id": 1, "text": "x", "note": "gone", "bogus": 1})

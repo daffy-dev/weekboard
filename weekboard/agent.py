@@ -32,6 +32,7 @@ Allowed operations:
   {"op":"edit","week":"2026-W36","match":"...","text":"new text"}
   {"op":"mission","week":"2026-W36","lines":["...","..."],"tagline":"..."}
   {"op":"quote","week":"2026-W36","text":"...","author":"..."}
+  {"op":"playlist","week":"2026-W36","title":"...","note":"..."}
   {"op":"status","week":"2026-W36","focus":90,"momentum":70,"shipped":85,"done":60}
 
 Rules:
@@ -41,6 +42,8 @@ Rules:
 - Keep task text short and imperative, in the language the user wrote it in.
 - Gauges are normally computed automatically; only emit "status" if the user
   explicitly asks to pin one to a number.
+- The playlist is always fictional flavour text, never a real artist, album, or song —
+  if the user names a real one, write something in that mood instead, not the real thing.
 - If the user says something that is not a board edit, return {"ops": [], "say": "..."}.
 """
 
@@ -48,10 +51,17 @@ FLAVOR_SYSTEM = """You write the flavour text for a cyberpunk terminal dashboard
 Given the user's week and their tasks, return ONLY this JSON:
 {"mission":["line one","line two","line three"],"tagline":"...",
  "quote_text":"...","quote_author":"...",
- "headline_ja":"...","headline_en":"..."}
+ "headline_ja":"...","headline_en":"...",
+ "playlist_title":"...","playlist_note":"..."}
 Mission lines are short, punchy, second-person-implied imperatives (max 40 chars each).
 The quote must be a real quote from a real person, relevant to the week's actual work.
 headline_ja is a short Japanese motivational line; headline_en is its English gloss in caps.
+playlist_title is a short, plausible-sounding genre/mood combo (max 40 chars, in the
+style of "Lo-fi Beats / Japanese City Pop") that fits the mood of this week's actual
+tasks — a heavy debugging week reads differently than a launch week. It is flavour
+text, not a real playlist: never name a real artist, album, or song, and never invent
+one that could be mistaken for a real release. playlist_note is one short line (max
+50 chars) on why that's the mood, e.g. "To keep the mind in flow state."
 """
 
 ROLLOVER_SYSTEM = """You help close out a week. Given the unfinished tasks, decide for each one
@@ -356,6 +366,10 @@ def apply_ops(store, ops: list[dict]) -> list[str]:
             week.quote_text = op.get("text", week.quote_text)
             week.quote_author = op.get("author", week.quote_author)
             messages.append(f"~ {week.key} quote updated")
+        elif kind == "playlist":
+            week.playlist_title = op.get("title", week.playlist_title)
+            week.playlist_note = op.get("note", week.playlist_note)
+            messages.append(f"~ {week.key} playlist updated")
         elif kind == "status":
             from .metrics import GAUGE_NAMES
 

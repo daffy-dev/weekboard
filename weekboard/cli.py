@@ -348,11 +348,14 @@ def flavor(ctx, week_ref):
     week.quote_author = data.get("quote_author", week.quote_author)
     week.headline_ja = data.get("headline_ja", week.headline_ja)
     week.headline_en = data.get("headline_en", week.headline_en)
+    week.playlist_title = data.get("playlist_title", week.playlist_title)
+    week.playlist_note = data.get("playlist_note", week.playlist_note)
     store.save(week)
     for line in week.mission:
         click.echo(f"  {line}")
     click.echo(f"  {GREEN}{week.tagline}{RESET}")
     click.echo(f'\n  "{week.quote_text}" — {week.quote_author}')
+    click.echo(f"\n  {DIM}{week.playlist_title} — {week.playlist_note}{RESET}")
     _render_if_enabled(ctx, store, store.load())
 
 

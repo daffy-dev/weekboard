@@ -128,7 +128,9 @@ wb rollover              # same, but carries everything without asking a model
 ```
 
 `wb flavor` is the one that makes the board feel alive — it reads what you're actually
-working on and writes the mission lines and quote around it.
+working on and writes the mission lines, quote, and playlist around it. The playlist is
+always fictional flavour text (never a real artist, album, or song), just re-picked to
+fit the week's mood — a heavy debugging week reads differently than a launch week.
 
 If `claude` isn't on your PATH, set `"claude_bin"` in the config to its full path.
 

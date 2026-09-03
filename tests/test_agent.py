@@ -82,6 +82,15 @@ class TestApplyOps:
         apply_ops(store, [{"op": "edit", "match": "old", "text": "new", "week": "2026-W36"}])
         assert store.load("2026-W36").tasks[0].text == "new"
 
+    def test_playlist(self, store):
+        apply_ops(
+            store,
+            [{"op": "playlist", "title": "Heads-Down Techno", "note": "For the deep-focus stretch.", "week": "2026-W36"}],
+        )
+        week = store.load("2026-W36")
+        assert week.playlist_title == "Heads-Down Techno"
+        assert week.playlist_note == "For the deep-focus stretch."
+
     def test_status_override_is_clamped(self, store):
         apply_ops(store, [{"op": "status", "focus": 500, "week": "2026-W36"}])
         assert store.load("2026-W36").overrides["focus"] == 100

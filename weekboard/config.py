@@ -73,8 +73,6 @@ class Config:
             "COFFEE",
         ]
     )
-    playlist_title: str = "Lo-fi Beats / Japanese City Pop"
-    playlist_note: str = "To keep the mind in flow state."
 
     @property
     def data_path(self) -> Path:

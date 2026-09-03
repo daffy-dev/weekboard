@@ -257,6 +257,44 @@ class TestAi:
         assert "no claude CLI found" in result.output
 
 
+class TestFlavor:
+    def test_flavor_applies_every_field_including_playlist(self, cli_env, runner, monkeypatch):
+        def fake_flavor(store, config, week):
+            return {
+                "mission": ["Ship it", "Ship it again"],
+                "tagline": "Locked in.",
+                "quote_text": "Move fast.",
+                "quote_author": "Someone",
+                "headline_ja": "急げ",
+                "headline_en": "HURRY",
+                "playlist_title": "Heads-Down Techno",
+                "playlist_note": "For the deep-focus stretch.",
+            }
+
+        monkeypatch.setattr(cli_mod.agent_mod, "flavor", fake_flavor)
+        result = runner.invoke(cli_mod.cli, ["--no-render", "flavor"])
+        assert result.exit_code == 0, result.output
+        assert "Heads-Down Techno" in result.output
+        assert "For the deep-focus stretch." in result.output
+
+        week = Store(cli_env).load(_current_key(Store(cli_env)))
+        assert week.playlist_title == "Heads-Down Techno"
+        assert week.playlist_note == "For the deep-focus stretch."
+
+    def test_flavor_missing_playlist_fields_keep_the_current_ones(self, cli_env, runner, monkeypatch):
+        """A reply that only rewrites mission/quote shouldn't blank out the playlist."""
+
+        monkeypatch.setattr(
+            cli_mod.agent_mod, "flavor",
+            lambda store, config, week: {"mission": ["Ship it"], "tagline": "Locked in.",
+                                          "quote_text": "Move fast.", "quote_author": "Someone"},
+        )
+        result = runner.invoke(cli_mod.cli, ["--no-render", "flavor"])
+        assert result.exit_code == 0, result.output
+        week = Store(cli_env).load(_current_key(Store(cli_env)))
+        assert week.playlist_title == "Lo-fi Beats / Japanese City Pop"
+
+
 class TestRollover:
     def test_rollover_without_ai_carries_everything(self, cli_env, runner):
         runner.invoke(cli_mod.cli, ["--no-render", "add", "Unfinished"])

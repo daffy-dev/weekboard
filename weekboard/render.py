@@ -261,7 +261,7 @@ def build_html(week: Week, config: Config, store=None) -> str:
             {"name": t, "svg": Markup(ICON_SVGS.get(t.upper(), ICON_SVGS["DEFAULT"]))}
             for t in config.tools[:7]
         ],
-        playlist={"title": config.playlist_title, "note": config.playlist_note},
+        playlist={"title": week.playlist_title, "note": week.playlist_note},
         task_cols=cols,
         task_size=size,
         task_row=row_h,

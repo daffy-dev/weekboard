@@ -135,6 +135,8 @@ class Week:
     quote_author: str = "Alan Kay"
     headline_ja: str = "改善は毎日の積み重ねだ。"
     headline_en: str = "KAIZEN IS DAILY."
+    playlist_title: str = "Lo-fi Beats / Japanese City Pop"
+    playlist_note: str = "To keep the mind in flow state."
     overrides: dict = field(default_factory=dict)
     updated: str = field(default_factory=now_iso)
 
@@ -239,6 +241,8 @@ class Week:
         week.quote_author = raw.get("quote_author", week.quote_author)
         week.headline_ja = raw.get("headline_ja", week.headline_ja)
         week.headline_en = raw.get("headline_en", week.headline_en)
+        week.playlist_title = raw.get("playlist_title", week.playlist_title)
+        week.playlist_note = raw.get("playlist_note", week.playlist_note)
         week.overrides = {
             k: int(v) for k, v in (raw.get("overrides") or {}).items() if v is not None
         }
@@ -257,6 +261,8 @@ class Week:
             "quote_author": self.quote_author,
             "headline_ja": self.headline_ja,
             "headline_en": self.headline_en,
+            "playlist_title": self.playlist_title,
+            "playlist_note": self.playlist_note,
             "overrides": self.overrides,
             "updated": self.updated,
             "tasks": [t.to_dict() for t in self.tasks],
