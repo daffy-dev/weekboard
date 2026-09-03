@@ -1,0 +1,23 @@
+{
+  "output_dir": "~/Downloads/desktop_plans",
+  "width": 0,
+  "height": 0,
+  "keep_renders": 3,
+  "art": "",
+  "accent": "#3ddc4a",
+  "git_repos": [],
+  "claude_bin": "claude",
+  "auto_render": true,
+  "user_label": "",
+  "host_label": "my-mac",
+  "tools": [
+    "VS CODE",
+    "ZSH",
+    "GIT"
+  ],
+  "backend": "api",
+  "api_model": "claude-haiku-4-5",
+  "api_key_file": "",
+  "inset_top_pct": 4.0,
+  "inset_bottom_pct": 0.0
+}

@@ -1,0 +1,110 @@
+{
+  "key": "2026-W36",
+  "start": "2026-08-31",
+  "end": "2026-09-06",
+  "mission": [
+    "Ship things. Solve problems.",
+    "Build value. Help people.",
+    "Create freedom."
+  ],
+  "tagline": "Level up.",
+  "quote_text": "The best way to predict the future is to build it.",
+  "quote_author": "Alan Kay",
+  "headline_ja": "改善は毎日の積み重ねだ。",
+  "headline_en": "KAIZEN IS DAILY.",
+  "overrides": {},
+  "updated": "2026-09-02T15:00:00",
+  "tasks": [
+    {
+      "id": 1,
+      "text": "Ship the new landing page",
+      "done": true,
+      "priority": "high",
+      "tags": [
+        "design"
+      ],
+      "created": "2026-08-31T09:00:00",
+      "completed": "2026-09-02T15:00:00",
+      "carried_from": null
+    },
+    {
+      "id": 2,
+      "text": "Write API docs for v2",
+      "done": true,
+      "priority": "normal",
+      "tags": [
+        "dev"
+      ],
+      "created": "2026-08-31T09:00:00",
+      "completed": "2026-09-02T15:00:00",
+      "carried_from": null
+    },
+    {
+      "id": 3,
+      "text": "Reply to client emails",
+      "done": true,
+      "priority": "normal",
+      "tags": [],
+      "created": "2026-08-31T09:00:00",
+      "completed": "2026-09-02T15:00:00",
+      "carried_from": null
+    },
+    {
+      "id": 4,
+      "text": "Fix mobile nav bug",
+      "done": false,
+      "priority": "high",
+      "tags": [
+        "dev",
+        "bug"
+      ],
+      "created": "2026-08-31T09:00:00",
+      "completed": null,
+      "carried_from": null
+    },
+    {
+      "id": 5,
+      "text": "Design new logo concepts",
+      "done": false,
+      "priority": "normal",
+      "tags": [
+        "design"
+      ],
+      "created": "2026-08-31T09:00:00",
+      "completed": null,
+      "carried_from": null
+    },
+    {
+      "id": 6,
+      "text": "Record demo video for launch",
+      "done": false,
+      "priority": "normal",
+      "tags": [
+        "marketing"
+      ],
+      "created": "2026-08-31T09:00:00",
+      "completed": null,
+      "carried_from": null
+    },
+    {
+      "id": 7,
+      "text": "Set up billing for new plan",
+      "done": false,
+      "priority": "normal",
+      "tags": [],
+      "created": "2026-08-31T09:00:00",
+      "completed": null,
+      "carried_from": null
+    },
+    {
+      "id": 8,
+      "text": "Prep slides for Friday call",
+      "done": false,
+      "priority": "low",
+      "tags": [],
+      "created": "2026-08-31T09:00:00",
+      "completed": null,
+      "carried_from": null
+    }
+  ]
+}

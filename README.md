@@ -1,5 +1,13 @@
 # wallpapersetter + weekboard
 
+A terminal to-do list that redraws itself as your desktop wallpaper every time you
+change something — tasks, gauges, quote of the week, all of it, live on your desktop
+instead of buried in another app.
+
+![weekboard dashboard](docs/screenshot.png)
+
+*(demo data — `examples/sample-week.json` has the file this was rendered from)*
+
 Two halves of one loop:
 
 - **`wallpaper_setter.py`** — watches a folder and sets the newest image as your desktop
@@ -19,7 +27,7 @@ Two halves of one loop:
 ## Setup
 
 ```bash
-cd /Users/daffy/workFiles/freelanceFiles/wallpapersetter
+cd ~/workFiles/freelanceFiles/wallpapersetter   # wherever you cloned it
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/playwright install chromium      # one-off, ~150MB
@@ -30,7 +38,7 @@ mkdir -p ~/Downloads/desktop_plans
 Put `wb` on your PATH so it's two keystrokes from anywhere:
 
 ```bash
-ln -s /Users/daffy/workFiles/freelanceFiles/wallpapersetter/wb /usr/local/bin/wb
+ln -s "$PWD/wb" /usr/local/bin/wb
 ```
 
 `wb` finds its own venv even when called through a symlink, so it works from any
@@ -341,26 +349,32 @@ wb path                  # print the data directory
 rm data/weeks/*.json     # start clean
 ```
 
-The repo ships seeded with your week 36 list so there's something on screen
-immediately.
+First run starts empty — just the default mission/quote, no tasks — so
+`wb add` your own. `examples/sample-week.json` shows what a populated week's
+JSON looks like (it's also what the screenshot at the top was rendered from);
+copy it into `data/weeks/` under a real week key if you want to poke at it.
 
 ---
 
 ## Background
 
-Watcher at login (unchanged from before):
+`install.sh` writes the LaunchAgent for you (from `com.weekboard.wallpapersetter.plist.template`,
+with your actual paths filled in) and prints the exact `launchctl bootstrap` command
+to start it. If you need to redo it by hand:
 
 ```bash
 mkdir -p ~/Library/LaunchAgents
-cp com.daffy.wallpapersetter.plist ~/Library/LaunchAgents/
-launchctl bootstrap gui/"$(id -u)" ~/Library/LaunchAgents/com.daffy.wallpapersetter.plist
+sed -e "s#__ROOT__#$PWD#g" -e "s#__HOME__#$HOME#g" \
+  com.weekboard.wallpapersetter.plist.template \
+  > ~/Library/LaunchAgents/com.weekboard.wallpapersetter.plist
+launchctl bootstrap gui/"$(id -u)" ~/Library/LaunchAgents/com.weekboard.wallpapersetter.plist
 ```
 
 Reload after editing the plist:
 
 ```bash
-launchctl bootout  gui/"$(id -u)" ~/Library/LaunchAgents/com.daffy.wallpapersetter.plist
-launchctl bootstrap gui/"$(id -u)" ~/Library/LaunchAgents/com.daffy.wallpapersetter.plist
+launchctl bootout  gui/"$(id -u)" ~/Library/LaunchAgents/com.weekboard.wallpapersetter.plist
+launchctl bootstrap gui/"$(id -u)" ~/Library/LaunchAgents/com.weekboard.wallpapersetter.plist
 ```
 
 Logs: `~/Library/Logs/wallpapersetter.log` and `.err.log`.
@@ -371,7 +385,7 @@ wallpaper never changes.
 A nice optional extra — refresh the flavour text every Monday morning:
 
 ```cron
-0 7 * * 1 cd /Users/daffy/workFiles/freelanceFiles/wallpapersetter && ./wb rollover --ai && ./wb flavor
+0 7 * * 1 cd ~/workFiles/freelanceFiles/wallpapersetter && ./wb rollover --ai && ./wb flavor
 ```
 
 ---
@@ -430,5 +444,7 @@ weekboard/
   templates/dashboard.html.j2
   assets/                  fonts, background art, ascii.txt
   assets/gallery/          swappable character art
-data/weeks/*.json          your tasks
+data/weeks/*.json          your tasks (gitignored — never committed)
+examples/sample-week.json  made-up demo week; what the top screenshot renders
+docs/screenshot.png        the dashboard, rendered from that demo data
 ```

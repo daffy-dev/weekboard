@@ -6,10 +6,9 @@
     ./install.sh                              # venv + deps + chromium + first render
     sudo ln -s $PWD/wb /usr/local/bin/wb      # so `wb` works from anywhere
 
-Start the wallpaper watcher (survives reboots):
+`install.sh` already wrote the LaunchAgent — start it (survives reboots):
 
-    cp com.daffy.wallpapersetter.plist ~/Library/LaunchAgents/
-    launchctl bootstrap gui/"$(id -u)" ~/Library/LaunchAgents/com.daffy.wallpapersetter.plist
+    launchctl bootstrap gui/"$(id -u)" ~/Library/LaunchAgents/com.weekboard.wallpapersetter.plist
 
 Say yes when macOS asks about controlling System Events, or the wallpaper never changes.
 

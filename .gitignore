@@ -19,10 +19,20 @@ data/history/
 data/.display.json
 # cached GitHub commit activity, per-machine
 data/.github.json
+# your real day-to-day tasks — personal/business content, never committed.
+# examples/sample-week.json is the tracked, made-up stand-in for demo purposes.
+data/weeks/
+# your real machine/user labels — personal, never committed.
+# data/config.example.json is the tracked, generic stand-in.
+data/config.json
 
 # scratch
 _to_delete/
+# staging leftovers from a protected-file write attempt via the desktop bridge
+Claude outputs/
 
 # stray local files that land in project root — never project content
-*.tar.gz
-Screenshot*.png
+# (anchored to root: without the leading /, these would also match
+# docs/screenshot.png, which is real, tracked project content)
+/*.tar.gz
+/Screenshot*.png

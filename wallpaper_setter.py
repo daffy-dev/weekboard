@@ -14,7 +14,7 @@ from pathlib import Path
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-DEFAULT_DIR = Path("/Users/daffy/Downloads/desktop_plans")
+DEFAULT_DIR = Path.home() / "Downloads" / "desktop_plans"
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp", ".heic", ".gif", ".tif", ".tiff"}
 DEBOUNCE_SECONDS = 1.0
 

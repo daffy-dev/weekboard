@@ -18,6 +18,12 @@ mkdir -p ~/Downloads/desktop_plans
 echo "→ first render"
 ./wb render
 
+echo "→ wallpaper watcher LaunchAgent"
+PLIST="$HOME/Library/LaunchAgents/com.weekboard.wallpapersetter.plist"
+mkdir -p "$HOME/Library/LaunchAgents"
+sed -e "s#__ROOT__#$ROOT#g" -e "s#__HOME__#$HOME#g" \
+  com.weekboard.wallpapersetter.plist.template > "$PLIST"
+
 cat <<TXT
 
 Done.
@@ -29,8 +35,7 @@ Done.
 Put it on your PATH:
   ln -s $ROOT/wb /usr/local/bin/wb
 
-Start the wallpaper watcher:
-  cp com.daffy.wallpapersetter.plist ~/Library/LaunchAgents/
-  launchctl bootstrap gui/"\$(id -u)" ~/Library/LaunchAgents/com.daffy.wallpapersetter.plist
+Start the wallpaper watcher (already written to $PLIST):
+  launchctl bootstrap gui/"\$(id -u)" "$PLIST"
 
 TXT
