@@ -93,6 +93,8 @@ class Board(App):
 
     CSS = CSS
     BINDINGS = [
+        Binding("j", "cursor_down", "down"),
+        Binding("k", "cursor_up", "up"),
         Binding("space", "toggle", "check"),
         Binding("a", "add", "add"),
         Binding("e", "edit", "edit"),
@@ -264,6 +266,18 @@ class Board(App):
         if index is None or not tasks or index >= len(tasks):
             return None
         return tasks[index]
+
+    def action_cursor_down(self) -> None:
+        """Move the selection down (vim-style j)."""
+        listing = self.query_one("#tasks", ListView)
+        if listing.index is not None and listing.children:
+            listing.index = min(listing.index + 1, len(listing.children) - 1)
+
+    def action_cursor_up(self) -> None:
+        """Move the selection up (vim-style k)."""
+        listing = self.query_one("#tasks", ListView)
+        if listing.index is not None and listing.children:
+            listing.index = max(listing.index - 1, 0)
 
     def action_toggle(self) -> None:
         """Check or uncheck the highlighted task."""

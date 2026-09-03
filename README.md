@@ -70,7 +70,7 @@ wb tui
 
 | key | does |
 |---|---|
-| `↑` `↓` | move |
+| `↑` `↓` / `k` `j` | move |
 | `space` | check / uncheck |
 | `a` | add a task |
 | `e` | edit the highlighted task |

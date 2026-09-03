@@ -42,6 +42,35 @@ async def test_mounts_and_paints_gauges_without_crashing(store):
 
 
 @pytest.mark.asyncio
+async def test_vim_keys_move_the_selection(store):
+    from textual.widgets import ListView
+
+    week = store.load("2026-W36")
+    week.add("a")
+    week.add("b")
+    week.add("c")
+    store.save(week)
+
+    app = Board("2026-W36")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        listing = app.query_one("#tasks", ListView)
+        assert listing.index == 0
+        await pilot.press("j")
+        await pilot.pause()
+        assert listing.index == 1
+        await pilot.press("j")
+        await pilot.pause()
+        assert listing.index == 2
+        await pilot.press("j")  # clamps at the bottom, doesn't wrap or crash
+        await pilot.pause()
+        assert listing.index == 2
+        await pilot.press("k")
+        await pilot.pause()
+        assert listing.index == 1
+
+
+@pytest.mark.asyncio
 async def test_toggle_persists(store):
     week = store.load("2026-W36")
     week.add("Task one")
