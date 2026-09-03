@@ -25,6 +25,9 @@ data/weeks/
 # your real machine/user labels — personal, never committed.
 # data/config.example.json is the tracked, generic stand-in.
 data/config.json
+# your own background art, pointed at by data/config.json's "art" key —
+# personal choice, not the repo's bundled default.
+data/art/
 
 # scratch
 _to_delete/
