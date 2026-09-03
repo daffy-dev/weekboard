@@ -78,6 +78,11 @@ you're actually in unless you ask for another.
 wb tui
 ```
 
+![weekboard TUI](docs/tui-demo.gif)
+
+*(same sample data — checking tasks off, the help overlay, and `/` filtering down to
+one task and back)*
+
 | key | does |
 |---|---|
 | `↑` `↓` / `k` `j` | move |
@@ -339,6 +344,14 @@ The bundled art is cropped from your original mockup. Drop any image in and poin
 run `wb render` — the layout doesn't care where the image came from. `art_prompt` in
 the config holds a starting prompt for that.
 
+### Why it looks like this
+
+The cyberpunk desk scene, the ninja braille art, the kanji headline — no deep reason,
+it's just what a daily driver should feel like: a HUD you're piloting, not a
+spreadsheet you're filling in. Every piece of it is a config value or a text file
+(`art`, `ascii.txt`, `headline_ja`), so swap it for your own aesthetic, or delete it
+down to a plain green terminal board — the layout doesn't care either way.
+
 ---
 
 ## Data
@@ -468,4 +481,5 @@ data/weeks/*.json          your tasks (gitignored — never committed)
 examples/sample-week.json  made-up demo week; what the top demo renders
 docs/screenshot.png        the dashboard, rendered from that demo data
 docs/demo.gif              the same demo data, tasks checked off in sequence
+docs/tui-demo.gif          the TUI driven through the same demo data, headlessly
 ```
