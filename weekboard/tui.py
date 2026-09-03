@@ -9,7 +9,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Input, Label, ListItem, ListView, Static
 
-from .model import parse_week_key, shift_week, week_key
+from .model import PRIORITIES, parse_week_key, shift_week, week_key
 from .store import Store
 
 CSS = """
@@ -32,6 +32,9 @@ ListItem.-highlight { background: #1e5030; border-left: thick #3ddc4a; }
 #status { height: 1; color: #4d6b5c; padding: 0 1; }
 AddModal { align: center middle; }
 #addbox { width: 70; height: auto; border: round #3ddc4a; background: #071310; padding: 1 2; }
+HelpModal { align: center middle; }
+#helpbox { width: 60; height: auto; border: round #3ddc4a; background: #071310; padding: 1 2; }
+#helptext { color: #dcefe2; }
 """
 
 
@@ -65,6 +68,26 @@ class AddModal(ModalScreen[str]):
         self.dismiss("")
 
 
+class HelpModal(ModalScreen[None]):
+    """List every keybinding, read live from Board.BINDINGS so it can't drift out of sync."""
+
+    BINDINGS = [
+        Binding("escape", "close", "close"),
+        Binding("question_mark", "close", "close", key_display="?"),
+    ]
+
+    def compose(self) -> ComposeResult:
+        """Build the modal."""
+        rows = "\n".join(f"{b.key:<14} {b.description}" for b in self.app.BINDINGS)
+        with Vertical(id="helpbox"):
+            yield Label("// KEYBINDINGS", classes="cap")
+            yield Static(rows, id="helptext")
+
+    def action_close(self) -> None:
+        """Dismiss the overlay."""
+        self.dismiss(None)
+
+
 class Board(App):
     """Terminal view of one week."""
 
@@ -80,6 +103,11 @@ class Board(App):
         Binding("t", "today", "this week"),
         Binding("r", "render", "render"),
         Binding("i", "ask", "ask AI"),
+        Binding("u", "undo", "undo"),
+        Binding("p", "cycle_priority", "priority"),
+        Binding("number_sign", "edit_tags", "edit tags", key_display="#"),
+        Binding("slash", "search", "search", key_display="/"),
+        Binding("question_mark", "help", "help", key_display="?"),
         Binding("q", "quit", "quit"),
     ]
 
@@ -90,6 +118,7 @@ class Board(App):
         self.week = self.store.load(self.key)
         # Cheap placeholder until the real (network-touching) stats land off-thread.
         self.sys_stats: dict = {"commits": [], "commit_count": 0}
+        self.filter_query: str = ""
 
     def compose(self) -> ComposeResult:
         """Build the layout."""
@@ -114,22 +143,35 @@ class Board(App):
 
     # ---------- painting ----------
 
+    def visible_tasks(self) -> list:
+        """Tasks shown in the list right now — every task, or the filtered subset."""
+        if not self.filter_query:
+            return self.week.tasks
+        query = self.filter_query.lower()
+        return [
+            task
+            for task in self.week.tasks
+            if query in task.text.lower() or any(query in tag.lower() for tag in task.tags)
+        ]
+
     def refresh_board(self, keep_index: int | None = None) -> None:
         """Reload the week and repaint every panel."""
         self.week = self.store.load(self.key)
         listing = self.query_one("#tasks", ListView)
         index = keep_index if keep_index is not None else listing.index
         listing.clear()
-        for number, task in enumerate(self.week.tasks, start=1):
+        visible = self.visible_tasks()
+        for task in visible:
             box = "[✓]" if task.done else "[ ]"
             style = "done" if task.done else ("high" if task.priority == "high" else "open")
             tags = f"  #{' #'.join(task.tags)}" if task.tags else ""
-            listing.append(ListItem(Label(f"{number:02d} {box} {task.text}{tags}", classes=style)))
-        if self.week.tasks:
-            listing.index = min(index or 0, len(self.week.tasks) - 1)
+            listing.append(ListItem(Label(f"{task.id:02d} {box} {task.text}{tags}", classes=style)))
+        if visible:
+            listing.index = min(index or 0, len(visible) - 1)
 
         marker = "" if self.week.is_current else "   (not this week)"
-        self.query_one("#title", Static).update(f"WEEK {self.week.number:02d}{marker}")
+        filter_marker = f'   [filter: "{self.filter_query}"]' if self.filter_query else ""
+        self.query_one("#title", Static).update(f"WEEK {self.week.number:02d}{marker}{filter_marker}")
         self.query_one("#range", Static).update(f"// {self.week.date_range}")
 
         mission = "\n".join(self.week.mission) + f"\n\n{self.week.tagline}"
@@ -216,11 +258,12 @@ class Board(App):
 
     @property
     def current(self):
-        """The highlighted task, or None."""
+        """The highlighted task, respecting an active filter, or None."""
         index = self.query_one("#tasks", ListView).index
-        if index is None or not self.week.tasks:
+        tasks = self.visible_tasks()
+        if index is None or not tasks or index >= len(tasks):
             return None
-        return self.week.tasks[index]
+        return tasks[index]
 
     def action_toggle(self) -> None:
         """Check or uncheck the highlighted task."""
@@ -236,6 +279,7 @@ class Board(App):
         def done(text: str | None) -> None:
             if text:
                 self.week.add(text)
+                self.filter_query = ""
                 self.save(len(self.week.tasks) - 1)
 
         self.push_screen(AddModal(f"add to week {self.week.number:02d}"), done)
@@ -254,15 +298,41 @@ class Board(App):
 
         self.push_screen(AddModal("edit task", task.text), done)
 
-    def action_delete(self) -> None:
-        """Delete the highlighted task."""
+    def action_cycle_priority(self) -> None:
+        """Cycle the highlighted task's priority: low → normal → high → low."""
+        task = self.current
+        if task is None:
+            return
+        order = list(PRIORITIES)
+        position = order.index(task.priority) if task.priority in order else -1
+        task.priority = order[(position + 1) % len(order)]
+        self.save(self.query_one("#tasks", ListView).index)
+
+    def action_edit_tags(self) -> None:
+        """Prompt for the highlighted task's tags, comma-separated."""
         task = self.current
         if task is None:
             return
         index = self.query_one("#tasks", ListView).index
+
+        def done(text: str | None) -> None:
+            if text:
+                task.tags = [tag.strip() for tag in text.split(",") if tag.strip()]
+                self.save(index)
+
+        self.push_screen(AddModal("tags, comma-separated", ", ".join(task.tags)), done)
+
+    def action_delete(self) -> None:
+        """Delete the highlighted task, leaving an undo hint in the status line."""
+        task = self.current
+        if task is None:
+            return
+        index = self.query_one("#tasks", ListView).index
+        text = task.text
         self.week.remove(task.id)
         self.week.renumber()
         self.save(max(0, (index or 1) - 1))
+        self.note(f' deleted "{text}" — press u to undo')
 
     def action_move_next(self) -> None:
         """Push the highlighted task into next week."""
@@ -277,6 +347,26 @@ class Board(App):
         self.week.renumber()
         self.save()
         self.note(f" → moved to {target.key}")
+
+    def action_undo(self) -> None:
+        """Restore the most recent snapshot, wherever it belongs in time.
+
+        Store.undo() is global, not scoped to the week currently on screen — it
+        always pops the single newest snapshot from ANY week's history. If that
+        happens to be this week, repaint and re-render so the change is visible
+        immediately; if it is some other week, say so rather than silently
+        jumping the user there or pretending nothing happened.
+        """
+        restored_key = self.store.undo()
+        if restored_key is None:
+            self.note(" nothing to undo")
+            return
+        if restored_key == self.key:
+            self.refresh_board()
+            self.rerender()
+            self.note(" undone")
+        else:
+            self.note(f" undid a change to {restored_key} (not this week)")
 
     def action_prev_week(self) -> None:
         """Go back one week."""
@@ -306,6 +396,23 @@ class Board(App):
                 self.run_agent(text)
 
         self.push_screen(AddModal("ask the agent"), done)
+
+    def action_search(self) -> None:
+        """Prompt for a filter query; narrows the visible list to text/tag matches."""
+
+        def done(text: str | None) -> None:
+            self.filter_query = (text or "").strip()
+            self.refresh_board(0)
+            if self.filter_query:
+                self.note(f' filtering: "{self.filter_query}"')
+            else:
+                self.note(" showing all tasks")
+
+        self.push_screen(AddModal("filter (blank to show all)", self.filter_query), done)
+
+    def action_help(self) -> None:
+        """Show the keybinding overlay."""
+        self.push_screen(HelpModal())
 
     @work(thread=True, exclusive=True)
     def run_agent(self, text: str) -> None:

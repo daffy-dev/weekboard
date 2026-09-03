@@ -22,7 +22,7 @@ The API key is already in `.env` — nothing to configure.
     wb                        show this week
     wb add "Call Harry"       add a task
     wb done 3                 check off number 3
-    wb tui                    full-screen board (space = check, q = quit)
+    wb tui                    full-screen board (space = check, ? = all keys, q = quit)
     wb ai "..."               plain language: add, check off, move, reschedule
 
 All of them redraw the wallpaper automatically. That's the whole loop.

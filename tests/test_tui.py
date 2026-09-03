@@ -131,3 +131,155 @@ async def test_survives_background_stats_refresh(store):
         # Still alive and still showing real gauge labels, not a traceback.
         text = str(app.query_one("#gauges").render())
         assert "FOCUS" in text
+
+
+# ---------- Phase A: undo, delete hint, help overlay ----------
+
+
+@pytest.mark.asyncio
+async def test_delete_then_undo_restores_the_task(store):
+    week = store.load("2026-W36")
+    week.add("Task one")
+    store.save(week)
+
+    app = Board("2026-W36")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("d")
+        await pilot.pause()
+        assert store.load("2026-W36").tasks == []
+        await pilot.press("u")
+        await pilot.pause()
+        assert [t.text for t in store.load("2026-W36").tasks] == ["Task one"]
+
+
+@pytest.mark.asyncio
+async def test_undo_with_nothing_to_undo_does_not_crash(store):
+    app = Board("2026-W36")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("u")
+        await pilot.pause()
+        assert "nothing to undo" in str(app.query_one("#status").render())
+
+
+@pytest.mark.asyncio
+async def test_delete_shows_the_deleted_task_text_in_the_status_hint(store):
+    week = store.load("2026-W36")
+    week.add("Call Harry")
+    store.save(week)
+
+    app = Board("2026-W36")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("d")
+        await pilot.pause()
+        assert "Call Harry" in str(app.query_one("#status").render())
+
+
+@pytest.mark.asyncio
+async def test_help_overlay_lists_bindings_and_can_be_closed(store):
+    from textual.css.query import NoMatches
+
+    app = Board("2026-W36")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("?")
+        await pilot.pause()
+        text = str(app.screen.query_one("#helptext").render())
+        assert "undo" in text
+        await pilot.press("escape")
+        await pilot.pause()
+        with pytest.raises(NoMatches):
+            app.query_one("#helptext")
+
+
+# ---------- Phase B: priority cycling, tag editing, search/filter ----------
+
+
+@pytest.mark.asyncio
+async def test_priority_cycles_low_normal_high(store):
+    week = store.load("2026-W36")
+    week.add("Task one")  # default priority "normal"
+    store.save(week)
+
+    app = Board("2026-W36")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("p")
+        await pilot.pause()
+        assert store.load("2026-W36").tasks[0].priority == "high"
+        await pilot.press("p")
+        await pilot.pause()
+        assert store.load("2026-W36").tasks[0].priority == "low"
+
+
+@pytest.mark.asyncio
+async def test_tag_edit_prefills_and_parses_comma_separated_tags(store):
+    from textual.widgets import Input
+
+    week = store.load("2026-W36")
+    week.add("Task one", tags=["old"])
+    store.save(week)
+
+    app = Board("2026-W36")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("#")
+        await pilot.pause()
+        assert app.screen.query_one(Input).value == "old"
+        app.screen.query_one(Input).value = "work, urgent"
+        await pilot.press("enter")
+        await pilot.pause()
+
+    assert store.load("2026-W36").tasks[0].tags == ["work", "urgent"]
+
+
+@pytest.mark.asyncio
+async def test_search_filters_the_list_and_clearing_shows_all(store):
+    from textual.widgets import Input, ListView
+
+    week = store.load("2026-W36")
+    week.add("Call Harry")
+    week.add("Buy milk")
+    store.save(week)
+
+    app = Board("2026-W36")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.press("/")
+        await pilot.pause()
+        app.screen.query_one(Input).value = "harry"
+        await pilot.press("enter")
+        await pilot.pause()
+        assert len(app.query_one("#tasks", ListView).children) == 1
+
+        await pilot.press("/")
+        await pilot.pause()
+        app.screen.query_one(Input).value = ""
+        await pilot.press("enter")
+        await pilot.pause()
+        assert len(app.query_one("#tasks", ListView).children) == 2
+
+
+@pytest.mark.asyncio
+async def test_filter_does_not_change_the_progress_bar(store):
+    from textual.widgets import Input
+
+    week = store.load("2026-W36")
+    week.add("Call Harry").mark(True)
+    week.add("Buy milk")
+    store.save(week)
+
+    app = Board("2026-W36")
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        before = str(app.query_one("#bar").render())
+        await pilot.press("/")
+        await pilot.pause()
+        app.screen.query_one(Input).value = "harry"
+        await pilot.press("enter")
+        await pilot.pause()
+        after = str(app.query_one("#bar").render())
+        assert before == after
+        assert "1/2" in after

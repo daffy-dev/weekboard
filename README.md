@@ -74,15 +74,23 @@ wb tui
 | `space` | check / uncheck |
 | `a` | add a task |
 | `e` | edit the highlighted task |
+| `p` | cycle priority: low → normal → high |
+| `#` | edit tags |
 | `d` | delete |
+| `u` | undo the most recent change |
+| `/` | search / filter the list |
 | `m` | move it to next week |
 | `←` `→` | previous / next week |
 | `t` | jump back to this week |
 | `i` | ask the agent (plain language) |
 | `r` | force a re-render |
+| `?` | show all keybindings |
 | `q` | quit |
 
-Renders happen on a background thread, so the UI never blocks.
+Renders happen on a background thread, so the UI never blocks. `d` deletes
+immediately — there's no confirmation prompt — but `u` undoes the most recent
+change anywhere in the board, and deleting always leaves a `press u to undo`
+hint in the status line.
 
 ---
 
@@ -375,7 +383,7 @@ A nice optional extra — refresh the flavour text every Monday morning:
 .venv/bin/pytest
 ```
 
-90 tests covering the ISO week arithmetic (including 53-week years and the New Year
+127 tests covering the ISO week arithmetic (including 53-week years and the New Year
 boundary), store round-trips and the undo history, the ops applier against malformed
 model replies, key resolution, GitHub event parsing and caching, the layout maths, and
 the TUI (mounted headlessly via Textual's own test harness — this is what catches the
