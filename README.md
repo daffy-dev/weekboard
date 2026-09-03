@@ -4,9 +4,11 @@ A terminal to-do list that redraws itself as your desktop wallpaper every time y
 change something — tasks, gauges, quote of the week, all of it, live on your desktop
 instead of buried in another app.
 
-![weekboard dashboard](docs/screenshot.png)
+![weekboard dashboard](docs/demo.gif)
 
-*(demo data — `examples/sample-week.json` has the file this was rendered from)*
+*(demo data — `examples/sample-week.json` has the file this was rendered from; the GIF is
+just that same week with tasks checked off in sequence, one render per state — a
+[static screenshot](docs/screenshot.png) of the same board is also in `docs/`)*
 
 Two halves of one loop:
 
@@ -444,6 +446,7 @@ weekboard/
   assets/                  fonts, background art, ascii.txt
   assets/gallery/          swappable character art
 data/weeks/*.json          your tasks (gitignored — never committed)
-examples/sample-week.json  made-up demo week; what the top screenshot renders
+examples/sample-week.json  made-up demo week; what the top demo renders
 docs/screenshot.png        the dashboard, rendered from that demo data
+docs/demo.gif              the same demo data, tasks checked off in sequence
 ```
