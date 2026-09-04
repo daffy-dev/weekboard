@@ -16,6 +16,9 @@ Say yes when macOS asks about controlling System Events, or the wallpaper never 
 
 The API key is already in `.env` — nothing to configure.
 
+If you tile everything (AeroSpace, yabai, ...), give the board its own empty
+workspace and bind a key to it — see **A dedicated Space** in the README.
+
 ## Every day
 
     wb                        show this week
@@ -65,6 +68,8 @@ from, not just this one):
 
     wb ascii --list           swap the character art
     wb ascii photo.jpg        make braille art from any image
+    wb art yourphoto.jpg      swap the background photo
+    wb art --generate "..."   or have the model draw one, as SVG (no image API/key)
     wb config --edit          settings
     wb render                 force a redraw
     wb doctor                 health check
@@ -72,8 +77,10 @@ from, not just this one):
 
 ## Cost
 
-Only `wb ai`, `wb flavor` and `wb rollover --ai` call a model — via the API on
-Haiku, about $0.001 each. Everything else is local and free.
+`wb ai`, `wb flavor` and `wb rollover --ai` call a model — via the API on Haiku,
+about $0.001 each. `wb art --generate` also calls one, but needs a much bigger reply
+(a full SVG document instead of a few words of JSON), so it runs closer to a cent or
+two per image. Everything else is local and free.
 
 ## Customization map
 
@@ -94,6 +101,6 @@ add if wanted: the **Focus Mode** word loop (`FOCUS / BUILD / DELIVER /
 REPEAT`), the **DAILY_REMINDER.EXE** code block (`while(alive){...}` and its
 comments), and the **"NO EXCUSES / ONLY RESULTS"** panel.
 
-Everything per-week (mission, quote, headline, tasks, overrides) also just
-lives in plain JSON at `data/weeks/2026-W36.json` — hand-editing it always
+Everything per-week (mission, quote, headline, playlist, tasks, overrides) also
+just lives in plain JSON at `data/weeks/2026-W36.json` — hand-editing it always
 works, even for things no command covers yet.
