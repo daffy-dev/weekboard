@@ -335,7 +335,7 @@ def rollover(ctx, week_ref, use_ai):
 @_week_option
 @click.pass_context
 def flavor(ctx, week_ref):
-    """Let the model rewrite the mission, quote and headline for this week."""
+    """Let the model rewrite the mission, quote, headline and playlist for this week."""
     store = Store()
     week = store.load(_resolve(week_ref))
     try:
@@ -428,7 +428,7 @@ def mission(ctx, lines, week_ref, tagline):
 @click.option("--save/--no-save", default=True, help="Write it into the board.")
 @click.pass_context
 def ascii_cmd(ctx, image, width, mode, invert, threshold, no_dither, use_name, do_list, save):
-    """Set the dashboard art. Give it an image, pick from --list, or show the current one."""
+    """Set the character art (DAILY_REMINDER.EXE). Give it an image, pick from --list, or show the current one."""
     from .config import ASSETS_DIR
 
     target = ASSETS_DIR / "ascii.txt"
