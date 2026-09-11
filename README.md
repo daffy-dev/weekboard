@@ -21,6 +21,9 @@ Two halves of one loop:
   redraws the dashboard as a 4K PNG, drops it in the watched folder, and the watcher
   puts it on your desktop. About a second, end to end.
 
+An optional third piece, `wb ai`, turns plain language into board edits via Claude —
+see **The agent** below for exactly what it sends and where.
+
 ```
   wb done 3   ──▶  data/weeks/2026-W36.json  ──▶  HTML  ──▶  headless Chromium
                                                                     │
@@ -143,16 +146,22 @@ If `claude` isn't on your PATH, set `"claude_bin"` in the config to its full pat
 | | `"backend": "cli"` (default) | `"backend": "api"` |
 |---|---|---|
 | setup | none — uses the `claude` you already have | needs `ANTHROPIC_API_KEY` |
-| tokens per call | **~44,600 in** | **~600 in, ~100 out** |
+| tokens per call | **~600, plus real overhead — see below** | **~600 in, ~100 out** |
 | counts against | your Claude Code usage limits | pay-as-you-go API billing |
 
-The prompt this tool actually sends is about 600 tokens. Measured, `claude -p` turned
-that into 44,600 input tokens per call, because `-p` starts a real agent session and
-loads its whole system prompt and tool definitions first. Roughly 98% of it is
-scaffolding we never asked for, and `--system-prompt` only trims it to ~39,500.
+The prompt this tool actually sends is about 600 tokens. `claude -p` sends that inside
+a real agent session, which loads its own system prompt and tool definitions before
+your prompt ever gets there — and, depending on what's in your Claude Code setup,
+your CLAUDE.md files and auto-memory too. That overhead is real, but how big it is
+depends on your own setup, not on weekboard, so there's no single honest number to
+quote here. Check yours:
 
-For a job this small — read a short list, emit some JSON — that's the wrong shape.
-The API path sends only that ~600-token prompt, nothing else.
+```bash
+claude -p "hi" --output-format json | python3 -c "import json,sys; print(json.load(sys.stdin)['usage'])"
+```
+
+For a job this small — read a short list, emit some JSON — that's the wrong shape
+either way. The API path sends only that ~600-token prompt, nothing else.
 
 One key works for everything — Anthropic keys aren't tied to a project or a model,
 so the one you already use elsewhere is fine. Simplest way: drop it in this project's
