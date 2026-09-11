@@ -4,6 +4,8 @@ A terminal to-do list that redraws itself as your desktop wallpaper every time y
 change something — tasks, gauges, quote of the week, all of it, live on your desktop
 instead of buried in another app.
 
+Requires macOS (uses System Events for wallpaper switching) and Python 3.10+.
+
 ![weekboard dashboard](docs/demo.gif)
 
 *(demo data — `examples/sample-week.json` has the file this was rendered from; the GIF is
@@ -12,8 +14,9 @@ just that same week with tasks checked off in sequence, one render per state —
 
 Two halves of one loop:
 
-- **`wallpaper_setter.py`** — watches a folder and sets the newest image as your desktop
-  background on every display. Unchanged, still the display layer.
+- **`wallpaper_setter.py`** — watches a folder and sets the newest render(s) as your
+  desktop background, one image per attached display if weekboard rendered one per
+  display, else the same image everywhere. Still just the display layer.
 - **`weekboard`** — a week-shaped to-do board you drive from the terminal. Every change
   redraws the dashboard as a 4K PNG, drops it in the watched folder, and the watcher
   puts it on your desktop. About a second, end to end.
@@ -29,7 +32,8 @@ Two halves of one loop:
 ## Setup
 
 ```bash
-cd ~/workFiles/freelanceFiles/wallpapersetter   # wherever you cloned it
+git clone https://github.com/daffy-dev/weekboard.git
+cd weekboard
 python3 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/playwright install chromium      # one-off, ~150MB
@@ -53,7 +57,7 @@ LaunchAgent to keep it running — see **Background** below).
 
 ```bash
 wb                                   # show this week
-wb add "Call Harry"                  # add to this week
+wb add "Call the plumber"            # add to this week
 wb add "Prep the talk" -w 37 -p high # add to week 37, high priority
 wb done 3 7                          # check off 3 and 7
 wb uncheck 3                         # un-check
@@ -114,8 +118,8 @@ hint in the status line.
 Shells out to the `claude` CLI already on your machine — no API key, no extra billing.
 
 ```bash
-wb ai "check off the Kalli one and put the invoices in week 37"
-wb ai "add: research analytics properly, call Harry, chase the Glóra pitch — that one's important"
+wb ai "check off the invoice task and move the deployment to week 37"
+wb ai "add: research analytics properly, follow up with the client, prep the pitch deck — that one's important"
 ```
 
 It sees the current and adjacent weeks, proposes a list of operations, shows them to
@@ -376,7 +380,9 @@ down to a plain green terminal board — the layout doesn't care either way.
 ## Data
 
 One JSON file per week in `data/weeks/`, e.g. `2026-W36.json`. Human-readable,
-diffable, and safe to edit by hand or commit to git. Nothing is stored anywhere else.
+diffable, and safe to edit by hand. Gitignored by default since it's usually real
+task/client data — commit it yourself if you actually want that. Nothing is stored
+anywhere else.
 
 ```bash
 wb path                  # print the data directory
@@ -449,7 +455,7 @@ takes you straight back. No app to switch to, nothing to tear down.
 .venv/bin/pytest
 ```
 
-144 tests covering the ISO week arithmetic (including 53-week years and the New Year
+193 tests covering the ISO week arithmetic (including 53-week years and the New Year
 boundary), store round-trips and the undo history, the ops applier against malformed
 model replies, key resolution, GitHub event parsing and caching, the layout maths, and
 the TUI (mounted headlessly via Textual's own test harness — this is what catches the
