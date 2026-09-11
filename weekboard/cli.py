@@ -560,6 +560,9 @@ def doctor():
     check("data dir", True, str(config_obj.data_path))
     out = config_obj.output_path
     check("watched folder exists", out.is_dir(), str(out))
+    from . import display
+
+    check("displays", True, display.describe(), required=False)
     try:
         import playwright  # noqa: F401
 

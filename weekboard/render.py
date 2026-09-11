@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import tempfile
 import time
+from contextlib import contextmanager
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
@@ -14,6 +17,7 @@ from markupsafe import Markup
 
 from . import metrics, stats
 from .config import ASSETS_DIR, TEMPLATES_DIR, Config, load_config
+from .display import slugify_display_name
 from .model import Week
 
 DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"]
@@ -270,39 +274,81 @@ def build_html(week: Week, config: Config, store=None) -> str:
 
 
 def render(week: Week, config: Config | None = None, store=None, keep_html: bool = False) -> Path:
-    """Render week to a PNG in the watched folder and prune old renders."""
+    """Render week to one PNG per attached display and prune old renders.
+
+    A pinned `config.width`/`height` renders exactly that one size, same as
+    always. Otherwise there's one render per attached display (config.resolve_sizes()),
+    each named after that display, so `wallpaper_setter.py` can put the right
+    image on the right screen instead of stretching one shared image over
+    all of them. Two displays sharing a resolution reuse one screenshot.
+    """
     config = config or load_config()
-    if not (config.width and config.height):
-        config.width, config.height = config.resolve_size()
-    html = build_html(week, config, store)
+    targets = config.resolve_sizes()  # [(display name or "", width, height), ...]
 
     out_dir = config.output_path
     out_dir.mkdir(parents=True, exist_ok=True)
-
-    tmp_dir = Path(tempfile.mkdtemp(prefix="weekboard-"))
-    html_path = tmp_dir / "board.html"
-    html_path.write_text(html, encoding="utf-8")
-
     stamp = time.strftime("%Y%m%d-%H%M%S")
     suffix = "jpg" if config.image_format.lower() in ("jpeg", "jpg") else "png"
-    png_path = out_dir / f"weekboard-{week.key}-{stamp}.{suffix}"
 
-    # Shoot to a dotfile first, then rename into place. The wallpaper watcher
-    # ignores dotfiles, so it only ever sees a complete image.
-    staging = out_dir / f".{png_path.name}.part"
-    _shoot(html_path, staging, config)
-    os.replace(staging, png_path)
+    by_size: dict[tuple[int, int], list[str]] = {}
+    for name, width, height in targets:
+        by_size.setdefault((width, height), []).append(name)
 
-    if keep_html:
-        shutil.copy(html_path, out_dir / f"weekboard-{week.key}.html")
-    shutil.rmtree(tmp_dir, ignore_errors=True)
+    tmp_dir = Path(tempfile.mkdtemp(prefix="weekboard-"))
+    paths: list[Path] = []
+    used_slugs: set[str] = set()
+    try:
+        with _browser() as browser:
+            # Largest resolution first, so callers that only look at one
+            # path (a status line) get the primary/largest screen's render.
+            ordered_sizes = sorted(by_size.items(), key=lambda kv: kv[0][0] * kv[0][1], reverse=True)
+            for (width, height), names in ordered_sizes:
+                size_config = replace(config, width=width, height=height)
+                html = build_html(week, size_config, store)
+                html_path = tmp_dir / f"board-{width}x{height}.html"
+                html_path.write_text(html, encoding="utf-8")
+
+                shot_path = tmp_dir / f"shot-{width}x{height}.{suffix}"
+                _shoot(html_path, shot_path, size_config, browser=browser)
+
+                if keep_html:
+                    shutil.copy(html_path, out_dir / f"weekboard-{week.key}-{width}x{height}.html")
+
+                for name in names:
+                    if name:
+                        slug = _unique_slug(slugify_display_name(name), used_slugs)
+                        out_name = f"weekboard-{week.key}-{slug}-{stamp}.{suffix}"
+                    else:
+                        out_name = f"weekboard-{week.key}-{stamp}.{suffix}"
+                    png_path = out_dir / out_name
+                    # Stage under a dotfile, then rename into place, so the
+                    # wallpaper watcher (which ignores dotfiles) only ever
+                    # sees complete images.
+                    staging = out_dir / f".{out_name}.part"
+                    shutil.copy(shot_path, staging)
+                    os.replace(staging, png_path)
+                    paths.append(png_path)
+    finally:
+        shutil.rmtree(tmp_dir, ignore_errors=True)
 
     _prune(out_dir, keep=config.keep_renders)
-    return png_path
+    return paths[0]
 
 
-def _shoot(html_path: Path, png_path: Path, config: Config) -> None:
-    """Screenshot a local HTML file with Playwright's Chromium."""
+def _unique_slug(slug: str, used: set[str]) -> str:
+    """Disambiguate two displays whose names would otherwise collide."""
+    candidate = slug
+    n = 2
+    while candidate in used:
+        candidate = f"{slug}-{n}"
+        n += 1
+    used.add(candidate)
+    return candidate
+
+
+@contextmanager
+def _browser():
+    """A launched Chromium instance, for one or many screenshots."""
     try:
         from playwright.sync_api import sync_playwright
     except ImportError as exc:  # pragma: no cover
@@ -314,30 +360,67 @@ def _shoot(html_path: Path, png_path: Path, config: Config) -> None:
 
     with sync_playwright() as pw:
         browser = pw.chromium.launch(args=["--force-color-profile=srgb", "--font-render-hinting=none"])
-        page = browser.new_page(
-            viewport={"width": config.width, "height": config.height},
-            device_scale_factor=config.scale,
-        )
-        page.goto(html_path.resolve().as_uri(), wait_until="load")
-        # Wait on the fonts themselves rather than guessing at a delay.
         try:
-            page.evaluate("document.fonts.ready")
-        except Exception:  # pragma: no cover - older engines
-            page.wait_for_timeout(250)
-        if config.image_format.lower() in ("jpeg", "jpg"):
-            page.screenshot(path=str(png_path), type="jpeg",
-                            quality=max(1, min(100, config.jpeg_quality)))
-        else:
-            page.screenshot(path=str(png_path), type="png")
-        browser.close()
+            yield browser
+        finally:
+            browser.close()
+
+
+def _shoot(html_path: Path, png_path: Path, config: Config, browser=None) -> None:
+    """Screenshot a local HTML file with Playwright's Chromium.
+
+    Pass an already-launched `browser` when shooting several sizes in a row
+    (as `render()` does) so Chromium only starts once.
+    """
+    if browser is not None:
+        _capture(browser, html_path, png_path, config)
+        return
+    with _browser() as fresh:
+        _capture(fresh, html_path, png_path, config)
+
+
+def _capture(browser, html_path: Path, png_path: Path, config: Config) -> None:
+    page = browser.new_page(
+        viewport={"width": config.width, "height": config.height},
+        device_scale_factor=config.scale,
+    )
+    page.goto(html_path.resolve().as_uri(), wait_until="load")
+    # Wait on the fonts themselves rather than guessing at a delay.
+    try:
+        page.evaluate("document.fonts.ready")
+    except Exception:  # pragma: no cover - older engines
+        page.wait_for_timeout(250)
+    if config.image_format.lower() in ("jpeg", "jpg"):
+        page.screenshot(path=str(png_path), type="jpeg",
+                        quality=max(1, min(100, config.jpeg_quality)))
+    else:
+        page.screenshot(path=str(png_path), type="png")
+    page.close()
+
+
+_STAMP_RE = re.compile(r"-(\d{8}-\d{6})\.(?:png|jpg|jpeg)$", re.IGNORECASE)
 
 
 def _prune(folder: Path, keep: int) -> None:
-    """Keep only the newest `keep` weekboard renders."""
-    renders = sorted(
-        (p for p in folder.iterdir()
-         if p.name.startswith("weekboard-") and p.suffix.lower() in (".png", ".jpg")),
-        key=lambda p: p.stat().st_mtime, reverse=True,
+    """Keep only the newest `keep` render batches.
+
+    A batch is every file sharing one timestamp — one render pass across
+    every display — so a two-display render doesn't get split across two
+    "keep" slots.
+    """
+    batches: dict[str, list[Path]] = {}
+    for p in folder.iterdir():
+        if not (p.name.startswith("weekboard-") and p.suffix.lower() in (".png", ".jpg")):
+            continue
+        match = _STAMP_RE.search(p.name)
+        key = match.group(1) if match else p.name
+        batches.setdefault(key, []).append(p)
+
+    ordered = sorted(
+        batches.items(),
+        key=lambda kv: max(f.stat().st_mtime for f in kv[1]),
+        reverse=True,
     )
-    for stale in renders[max(keep, 1):]:
-        stale.unlink(missing_ok=True)
+    for _, files in ordered[max(keep, 1):]:
+        for stale in files:
+            stale.unlink(missing_ok=True)

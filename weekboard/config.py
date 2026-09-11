@@ -106,12 +106,26 @@ class Config:
         return self.data_path / ".stats_history.json"
 
     def resolve_size(self) -> tuple[int, int]:
-        """Render size: whatever the config pins, else this machine's display."""
+        """Render size: whatever the config pins, else this machine's largest display."""
         if self.width and self.height:
             return self.width, self.height
         from .display import detect
 
         return detect(self.display_cache)
+
+    def resolve_sizes(self) -> list[tuple[str, int, int]]:
+        """Every (display name, width, height) to render.
+
+        A pinned width/height renders that one size only, same as before.
+        Otherwise this is one entry per attached display, so each screen can
+        get a wallpaper sized for it instead of one image stretched onto all
+        of them.
+        """
+        if self.width and self.height:
+            return [("", self.width, self.height)]
+        from .display import detect_all
+
+        return detect_all(self.display_cache)
 
     @property
     def art_path(self) -> Path:
