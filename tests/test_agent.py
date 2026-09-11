@@ -37,8 +37,8 @@ class TestExtractJson:
 
 class TestApplyOps:
     def test_add(self, store):
-        apply_ops(store, [{"op": "add", "text": "Call Harry", "week": "2026-W36"}])
-        assert store.load("2026-W36").tasks[0].text == "Call Harry"
+        apply_ops(store, [{"op": "add", "text": "Call the plumber", "week": "2026-W36"}])
+        assert store.load("2026-W36").tasks[0].text == "Call the plumber"
 
     def test_add_with_no_text_is_skipped(self, store):
         apply_ops(store, [{"op": "add", "week": "2026-W36"}])
@@ -49,8 +49,8 @@ class TestApplyOps:
         assert store.load("2026-W36").tasks == []
 
     def test_done_by_substring(self, store):
-        apply_ops(store, [{"op": "add", "text": "Call Kalli back", "week": "2026-W36"}])
-        apply_ops(store, [{"op": "done", "match": "Kalli", "week": "2026-W36"}])
+        apply_ops(store, [{"op": "add", "text": "Call the client back", "week": "2026-W36"}])
+        apply_ops(store, [{"op": "done", "match": "client", "week": "2026-W36"}])
         assert store.load("2026-W36").tasks[0].done
 
     def test_done_by_number(self, store):

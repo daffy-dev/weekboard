@@ -21,16 +21,16 @@ class TestSaveLoad:
 
     def test_round_trip(self, store):
         week = store.load("2026-W36")
-        week.add("Send invoices to Kótlá")
+        week.add("Sækja kaffibollann")
         store.save(week)
-        assert store.load("2026-W36").tasks[0].text == "Send invoices to Kótlá"
+        assert store.load("2026-W36").tasks[0].text == "Sækja kaffibollann"
 
     def test_written_file_is_valid_json_and_utf8(self, store):
         week = store.load("2026-W36")
-        week.add("verðskrá for Hólmur Heilsa")
+        week.add("verðskrá fyrir kaffihúsið")
         path = store.save(week)
         data = json.loads(path.read_text(encoding="utf-8"))
-        assert data["tasks"][0]["text"] == "verðskrá for Hólmur Heilsa"
+        assert data["tasks"][0]["text"] == "verðskrá fyrir kaffihúsið"
 
     def test_no_temp_files_are_left_behind(self, store):
         week = store.load("2026-W36")

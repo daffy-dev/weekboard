@@ -19,7 +19,7 @@ Two halves of one loop:
   display, else the same image everywhere. Still just the display layer.
 - **`weekboard`** — a week-shaped to-do board you drive from the terminal. Every change
   redraws the dashboard as a 4K PNG, drops it in the watched folder, and the watcher
-  puts it on your desktop. About a second, end to end.
+  puts it on your desktop. A couple of seconds, end to end.
 
 An optional third piece, `wb ai`, turns plain language into board edits via Claude —
 see **The agent** below for exactly what it sends and where.
@@ -37,14 +37,12 @@ see **The agent** below for exactly what it sends and where.
 ```bash
 git clone https://github.com/daffy-dev/weekboard.git
 cd weekboard
-python3 -m venv .venv
-.venv/bin/pip install -e ".[dev]"
-.venv/bin/playwright install chromium      # one-off, ~150MB
-mkdir -p ~/Downloads/desktop_plans
-./wb doctor                                 # checks everything above
+./install.sh
 ```
 
-Put `wb` on your PATH so it's two keystrokes from anywhere:
+That creates the venv, installs dependencies and Chromium, renders a first board, and
+writes (but doesn't start) a LaunchAgent to keep the watcher running. Put `wb` on your
+PATH so it's two keystrokes from anywhere:
 
 ```bash
 ln -s "$PWD/wb" /usr/local/bin/wb
@@ -53,6 +51,19 @@ ln -s "$PWD/wb" /usr/local/bin/wb
 `wb` finds its own venv even when called through a symlink, so it works from any
 directory. Then start the watcher (foreground to test,
 LaunchAgent to keep it running — see **Background** below).
+
+<details>
+<summary>Doing it by hand instead of <code>install.sh</code></summary>
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -e ".[dev]"
+.venv/bin/playwright install chromium      # one-off, ~150MB
+mkdir -p ~/Downloads/desktop_plans
+./wb doctor                                 # checks everything above
+```
+
+</details>
 
 ---
 
@@ -434,7 +445,7 @@ wallpaper never changes.
 A nice optional extra — refresh the flavour text every Monday morning:
 
 ```cron
-0 7 * * 1 cd ~/workFiles/freelanceFiles/wallpapersetter && ./wb rollover --ai && ./wb flavor
+0 7 * * 1 cd ~/code/weekboard && ./wb rollover --ai && ./wb flavor
 ```
 
 ---

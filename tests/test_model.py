@@ -101,10 +101,10 @@ class TestWeek:
 
     def test_round_trip_preserves_tasks(self):
         week = Week(key="2026-W36")
-        week.add("Glóra sales pitch", priority="high", tags=["sales"])
+        week.add("Acme sales pitch", priority="high", tags=["sales"])
         week.overrides["focus"] = 90
         restored = Week.from_dict(week.to_dict())
-        assert restored.tasks[0].text == "Glóra sales pitch"
+        assert restored.tasks[0].text == "Acme sales pitch"
         assert restored.tasks[0].priority == "high"
         assert restored.tasks[0].tags == ["sales"]
         assert restored.overrides == {"focus": 90}

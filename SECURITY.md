@@ -20,8 +20,11 @@ on faith.
   requested or stored.
 - `wb render` writes an image to `output_dir` (`~/Downloads/desktop_plans`
   by default) and, via `wallpaper_setter.py`, asks macOS's System Events
-  to set it as the desktop background. That's the only place this tool
-  reaches outside its own project directory.
+  to set it as the desktop background.
+- `install.sh` writes a LaunchAgent plist to `~/Library/LaunchAgents/`, so
+  the watcher can run in the background and survive reboots; its logs go
+  to `~/Library/Logs/`. Those, plus the render output above, are the only
+  places this tool reaches outside its own project directory.
 
 ## API keys
 

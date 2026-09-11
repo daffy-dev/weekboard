@@ -15,7 +15,7 @@
     "ZSH",
     "GIT"
   ],
-  "backend": "api",
+  "backend": "cli",
   "api_model": "claude-haiku-4-5",
   "api_key_file": "",
   "inset_top_pct": 4.0,

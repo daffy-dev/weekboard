@@ -2,7 +2,8 @@
 
 ## One-time setup
 
-    cd ~/workFiles/freelanceFiles/wallpapersetter
+    git clone https://github.com/daffy-dev/weekboard.git
+    cd weekboard
     ./install.sh                              # venv + deps + chromium + first render
     sudo ln -s $PWD/wb /usr/local/bin/wb      # so `wb` works from anywhere
 
@@ -14,7 +15,7 @@ Say yes when macOS asks about controlling System Events, or the wallpaper never 
 
     wb doctor        # confirms everything, incl. which AI backend is live
 
-The API key is already in `.env` — nothing to configure.
+If you're using the API backend, copy `.env.example` to `.env` and add your key.
 
 If you tile everything (AeroSpace, yabai, ...), give the board its own empty
 workspace and bind a key to it — see **A dedicated Space** in the README.
@@ -22,7 +23,7 @@ workspace and bind a key to it — see **A dedicated Space** in the README.
 ## Every day
 
     wb                        show this week
-    wb add "Call Harry"       add a task
+    wb add "Call the plumber" add a task
     wb done 3                 check off number 3
     wb tui                    full-screen board (space = check, ? = all keys, q = quit)
     wb ai "..."               plain language: add, check off, move, reschedule

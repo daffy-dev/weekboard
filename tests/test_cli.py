@@ -48,10 +48,10 @@ def runner():
 
 class TestTaskCommands:
     def test_add_then_ls(self, cli_env, runner):
-        result = runner.invoke(cli_mod.cli, ["--no-render", "add", "Call Harry"])
+        result = runner.invoke(cli_mod.cli, ["--no-render", "add", "Call the plumber"])
         assert result.exit_code == 0, result.output
         result = runner.invoke(cli_mod.cli, ["--no-render", "ls"])
-        assert "Call Harry" in result.output
+        assert "Call the plumber" in result.output
 
     def test_add_requires_text(self, cli_env, runner):
         result = runner.invoke(cli_mod.cli, ["--no-render", "add"])

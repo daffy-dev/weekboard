@@ -98,7 +98,7 @@ def cli(ctx, no_render):
 @click.option("-t", "--tag", "tags", multiple=True, help="Tag (repeatable).")
 @click.pass_context
 def add(ctx, text, week_ref, priority, tags):
-    """Add a task. wb add "call Kalli" -w 37 -p high"""
+    """Add a task. wb add "call the plumber" -w 37 -p high"""
     store = Store()
     week = store.load(_resolve(week_ref))
     task = week.add(" ".join(text), priority=priority, tags=list(tags))
@@ -251,7 +251,7 @@ def tui(week_ref):
 @click.option("-y", "--yes", is_flag=True, help="Apply without confirming.")
 @click.pass_context
 def ai(ctx, text, yes):
-    """Talk to the board. wb ai "check off the Kalli one and add invoices to week 37" """
+    """Talk to the board. wb ai "check off the invoice task and add deployment to week 37" """
     store = Store()
     config = store.config
     try:

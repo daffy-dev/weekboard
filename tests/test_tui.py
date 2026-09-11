@@ -195,7 +195,7 @@ async def test_undo_with_nothing_to_undo_does_not_crash(store):
 @pytest.mark.asyncio
 async def test_delete_shows_the_deleted_task_text_in_the_status_hint(store):
     week = store.load("2026-W36")
-    week.add("Call Harry")
+    week.add("Call the plumber")
     store.save(week)
 
     app = Board("2026-W36")
@@ -203,7 +203,7 @@ async def test_delete_shows_the_deleted_task_text_in_the_status_hint(store):
         await pilot.pause()
         await pilot.press("d")
         await pilot.pause()
-        assert "Call Harry" in str(app.query_one("#status").render())
+        assert "Call the plumber" in str(app.query_one("#status").render())
 
 
 @pytest.mark.asyncio
@@ -269,7 +269,7 @@ async def test_search_filters_the_list_and_clearing_shows_all(store):
     from textual.widgets import Input, ListView
 
     week = store.load("2026-W36")
-    week.add("Call Harry")
+    week.add("Call the plumber")
     week.add("Buy milk")
     store.save(week)
 
@@ -278,7 +278,7 @@ async def test_search_filters_the_list_and_clearing_shows_all(store):
         await pilot.pause()
         await pilot.press("/")
         await pilot.pause()
-        app.screen.query_one(Input).value = "harry"
+        app.screen.query_one(Input).value = "plumber"
         await pilot.press("enter")
         await pilot.pause()
         assert len(app.query_one("#tasks", ListView).children) == 1
@@ -296,7 +296,7 @@ async def test_filter_does_not_change_the_progress_bar(store):
     from textual.widgets import Input
 
     week = store.load("2026-W36")
-    week.add("Call Harry").mark(True)
+    week.add("Call the plumber").mark(True)
     week.add("Buy milk")
     store.save(week)
 
@@ -306,7 +306,7 @@ async def test_filter_does_not_change_the_progress_bar(store):
         before = str(app.query_one("#bar").render())
         await pilot.press("/")
         await pilot.pause()
-        app.screen.query_one(Input).value = "harry"
+        app.screen.query_one(Input).value = "plumber"
         await pilot.press("enter")
         await pilot.pause()
         after = str(app.query_one("#bar").render())
