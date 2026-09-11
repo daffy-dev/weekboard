@@ -5,7 +5,7 @@
     git clone https://github.com/daffy-dev/weekboard.git
     cd weekboard
     ./install.sh                              # venv + deps + chromium + first render
-    sudo ln -s $PWD/wb /usr/local/bin/wb      # so `wb` works from anywhere
+    sudo ln -sf "$PWD/wb" /usr/local/bin/wb   # so `wb` works from anywhere
 
 `install.sh` already wrote the LaunchAgent — start it (survives reboots):
 

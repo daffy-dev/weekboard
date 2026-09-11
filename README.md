@@ -45,7 +45,7 @@ writes (but doesn't start) a LaunchAgent to keep the watcher running. Put `wb` o
 PATH so it's two keystrokes from anywhere:
 
 ```bash
-ln -s "$PWD/wb" /usr/local/bin/wb
+sudo ln -sf "$PWD/wb" /usr/local/bin/wb
 ```
 
 `wb` finds its own venv even when called through a symlink, so it works from any

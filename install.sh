@@ -33,7 +33,7 @@ Done.
   ./wb doctor          check the setup
 
 Put it on your PATH:
-  ln -s $ROOT/wb /usr/local/bin/wb
+  sudo ln -sf "$ROOT/wb" /usr/local/bin/wb
 
 Start the wallpaper watcher (already written to $PLIST):
   launchctl bootstrap gui/"\$(id -u)" "$PLIST"
