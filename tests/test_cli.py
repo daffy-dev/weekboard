@@ -87,6 +87,32 @@ class TestTaskCommands:
         result = runner.invoke(cli_mod.cli, ["--no-render", "ls", "-w", "next"])
         assert "Push to next week" in result.output
 
+    def test_mv_reports_a_clear_error_if_the_target_save_fails(self, cli_env, runner, monkeypatch):
+        """The source save lands first; if the target save then blows up, the
+        task must not just vanish — the error has to say `wb undo` fixes it,
+        and undo has to actually put the task back afterward."""
+        runner.invoke(cli_mod.cli, ["--no-render", "add", "Don't disappear"])
+
+        original_save = Store.save
+        calls = []
+
+        def flaky_save(self, week):
+            calls.append(week.key)
+            if len(calls) == 2:  # the target save — source already landed
+                raise OSError("disk full")
+            return original_save(self, week)
+
+        monkeypatch.setattr(Store, "save", flaky_save)
+        result = runner.invoke(cli_mod.cli, ["--no-render", "mv", "1", "--to", "next"])
+        assert result.exit_code != 0
+        assert "wb undo" in result.output
+
+        monkeypatch.setattr(Store, "save", original_save)
+        result = runner.invoke(cli_mod.cli, ["--no-render", "undo"])
+        assert result.exit_code == 0
+        result = runner.invoke(cli_mod.cli, ["--no-render", "ls"])
+        assert "Don't disappear" in result.output
+
     def test_undo_restores_after_rm(self, cli_env, runner):
         runner.invoke(cli_mod.cli, ["--no-render", "add", "Don't lose me"])
         runner.invoke(cli_mod.cli, ["--no-render", "rm", "1"])

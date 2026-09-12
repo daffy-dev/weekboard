@@ -199,7 +199,13 @@ def move(ctx, ids, week_ref, to_ref):
         click.echo(f"  {GREEN}→{RESET} {task.text}  {DIM}{source.key} → {target.key}{RESET}")
     source.renumber()
     store.save(source)
-    store.save(target)
+    try:
+        store.save(target)
+    except OSError as exc:
+        raise click.ClickException(
+            f"couldn't save {target.key} ({exc}). The task already came out of "
+            f"{source.key} — run `wb undo` to put it back."
+        )
     _render_if_enabled(ctx, store, store.load())
 
 
